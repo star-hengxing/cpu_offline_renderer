@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include <Hinae/basic_type.hpp>
 
 using namespace Hinae;

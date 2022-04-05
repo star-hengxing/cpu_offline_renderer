@@ -1,6 +1,7 @@
 #pragma once
 
 #include <source_location>
+#include <algorithm>
 #include <iostream>
 #include <chrono>
 #include <ranges>
