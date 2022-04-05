@@ -1,0 +1,42 @@
+direct_light_integrator
+{
+    spp(4)
+}
+
+perspective_camera
+{
+    width(1280)
+    height(720)
+    pos(0, 5, 10)
+    at(0, 0, 0)
+    up(0, 1, 0)
+    fov(60)
+}
+
+point_light
+{
+    position(0, 10, 0)
+    intensity(100)
+}
+
+Plane
+{
+    length(10)
+    Matte
+    {
+        checker_texture(4, 4, white, cyan)
+    }
+}
+
+Sphere
+{
+    radius(1)
+    Transform
+    {
+        translate(0, 1, 0)
+    }
+    Matte
+    {
+        constant_texture(white)
+    }
+}
