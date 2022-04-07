@@ -14,17 +14,7 @@
 
 using i8 = std::int8_t;
 
-fn read_file(std::string_view filename) -> std::tuple<std::unique_ptr<char[]>, usize>;
-
-enum class parse_error
-{
-    Cannot_open_file,
-    Cannot_parse_string,
-    Missing_bracket,
-    Missing_comma,
-};
-
-std::ostream& operator << (std::ostream& os, parse_error error);
+fn read_file(const std::string_view& filename) -> std::tuple<std::unique_ptr<char[]>, usize>;
 
 struct Object
 {
@@ -73,10 +63,10 @@ private:
 
     fn parse_string() -> std::string;
 
-    fn parse_object() -> Result<std::vector<Object>, parse_error>;
+    fn parse_object() -> Result<std::vector<Object>, std::string_view>;
 
-    fn parse_property() -> Result<std::vector<Object>, parse_error>;
+    fn parse_property() -> Result<std::vector<Object>, std::string_view>;
 
 public:
-    static fn parse(std::string_view filename) -> Result<std::vector<Object>, parse_error>;
+    static fn parse(const std::string_view& filename) -> Result<std::vector<Object>, std::string_view>;
 };

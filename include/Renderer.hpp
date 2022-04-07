@@ -5,14 +5,6 @@
 #include <Scene/Scene.hpp>
 #include <util/Result.hpp>
 
-enum class Error
-{
-    invalid_parameter,
-    parse_failed,
-};
-
-std::ostream& operator << (std::ostream& os, Error error);
-
 struct Renderer
 {
 private:
@@ -23,7 +15,7 @@ private:
     Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<Integrator>&& integrator);
 
 public:
-    static Result<Renderer, Error> init(int argc, char const *argv[]);
+    static Result<Renderer, std::string_view> init(int argc, char const *argv[]);
 
     void render();
 };

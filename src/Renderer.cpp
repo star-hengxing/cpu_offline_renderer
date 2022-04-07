@@ -10,23 +10,14 @@ static void bar(f64 f)
     fprintf(stderr, "Rendering...%d%%\r", static_cast<int>(f * 100));
 }
 
-std::ostream& operator << (std::ostream& os, Error error)
-{
-    switch(error)
-    {
-        using enum Error;
-        case invalid_parameter: os << "invalid parameter"; break;
-        case parse_failed: os << "parse failed"; break;
-    }
-    return os;
-}
-
 Renderer::Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<Integrator>&& integrator)
     : scene(std::move(scene)), camera(std::move(camera)), integrator(std::move(integrator)) {}
 
-Result<Renderer, Error> Renderer::init(int argc, char const *argv[])
+using namespace std::literals;
+
+Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
 {
-    if(argc != 2) return Err(Error::invalid_parameter);
+    if(argc != 2) return Err("invalid parameter"sv);
 
     println("Scene file parsing...");
     Timer timer;

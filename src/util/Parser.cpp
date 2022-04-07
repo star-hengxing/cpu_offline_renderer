@@ -1,6 +1,6 @@
 #include <util/Parser.hpp>
 
-fn read_file(std::string_view filename) -> std::tuple<std::unique_ptr<char[]>, usize>
+fn read_file(const std::string_view& filename) -> std::tuple<std::unique_ptr<char[]>, usize>
 {
     std::ifstream in(filename.data(), std::ifstream::in);
     if(!in) return {nullptr, 0};
@@ -11,19 +11,6 @@ fn read_file(std::string_view filename) -> std::tuple<std::unique_ptr<char[]>, u
     buffer[size] = '\0';
     in.close();
     return {std::move(buffer), size};
-}
-
-std::ostream& operator << (std::ostream& os, parse_error error)
-{
-    switch(error)
-    {
-        using enum parse_error;
-        case Cannot_open_file: os << "Cannot open file"; break;
-        case Cannot_parse_string: os << "Cannot parse string"; break;
-        case Missing_bracket: os << "Missing bracket"; break;
-        case Missing_comma: os << "Missing comma"; break;
-    }
-    return os;
 }
 
 Parser::Parser(i8* p) : current(p) {}
@@ -62,9 +49,11 @@ fn Parser::parse_string() -> std::string
     return key;
 }
 
-fn Parser::parse_property() -> Result<std::vector<Object>, parse_error>
+using namespace std::literals;
+
+fn Parser::parse_property() -> Result<std::vector<Object>, std::string_view>
 {
-    if(!match('(')) return Err(parse_error::Missing_bracket);
+    if(!match('(')) return Err("Missing bracket"sv);
     next();
 
     std::vector<Object> vector;
@@ -86,7 +75,7 @@ fn Parser::parse_property() -> Result<std::vector<Object>, parse_error>
             if(c == ',')
                 c = next().skip().get();
             else
-                return Err(parse_error::Missing_comma);
+                return Err("Missing comma"sv);
         }
         else
         {
@@ -96,9 +85,9 @@ fn Parser::parse_property() -> Result<std::vector<Object>, parse_error>
     }
 }
 
-fn Parser::parse_object() -> Result<std::vector<Object>, parse_error>
+fn Parser::parse_object() -> Result<std::vector<Object>, std::string_view>
 {
-    if(!skip().match('{')) return Err(parse_error::Missing_bracket);
+    if(!skip().match('{')) return Err("Missing bracket"sv);
     next();
 
     std::vector<Object> ret;
@@ -112,7 +101,7 @@ fn Parser::parse_object() -> Result<std::vector<Object>, parse_error>
         std::string name = parse_string();
         if(name.empty())
         {
-            return Err(parse_error::Cannot_parse_string);
+            return Err("Cannot parse string"sv);
         }
 
         skip();
@@ -130,15 +119,15 @@ fn Parser::parse_object() -> Result<std::vector<Object>, parse_error>
         }
         else
         {
-            return Err(parse_error::Missing_bracket);
+            return Err("Missing bracket"sv);
         }
     };
 }
 
-fn Parser::parse(std::string_view filename) -> Result<std::vector<Object>, parse_error>
+fn Parser::parse(const std::string_view& filename) -> Result<std::vector<Object>, std::string_view>
 {
     const auto [buffer, size] = read_file(filename);
-    if(!buffer) return Err(parse_error::Cannot_open_file);
+    if(!buffer) return Err("Cannot open file"sv);
 
     Parser parse((i8*)buffer.get());
     std::vector<Object> ret;
@@ -150,13 +139,13 @@ fn Parser::parse(std::string_view filename) -> Result<std::vector<Object>, parse
         {
             if(parse.is_end()) break;
 
-            return Err(parse_error::Cannot_parse_string);
+            return Err("Cannot parse string"sv);
         }
 
         auto result = parse.parse_object();
         if(result.is_err())
         {
-            print("parse object", name, "failed\n");
+            print("parse", name, "failed\n");
             return Err(result.take_err_value());
         }
 

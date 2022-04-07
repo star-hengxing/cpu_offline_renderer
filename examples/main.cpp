@@ -3,7 +3,7 @@
 
 int main(int argc, char const *argv[])
 {
-    Result<Renderer, Error> result = Renderer::init(argc, argv);
+    Result<Renderer, std::string_view> result = Renderer::init(argc, argv);
     if(result.is_err())
     {
         println(result.err_value());
