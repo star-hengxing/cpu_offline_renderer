@@ -17,12 +17,9 @@ using namespace std::literals;
 
 Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
 {
-    if(argc != 2) return Err("invalid parameter"sv);
+    // if(argc != 2) return Err("invalid parameter"sv);
 
-    println("Scene file parsing...");
-    Timer timer;
-    auto [scene, camera, integrator] = parse(argv[1]);
-    timer.elapsed();
+    auto [scene, camera, integrator] = parse();
 
     println("BVH build...");
     Timer::elapsed(&scene, &Scene::build);
