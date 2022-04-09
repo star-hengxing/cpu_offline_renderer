@@ -16,8 +16,9 @@ f32 Specular::pdf(const Vector3f& wi, const Vector3f& wo) const
 }
 
 std::tuple<Spectrum, Vector3f, f32>
-Specular::sample_f(const Vector3f& wi, const Vector3f& n, const Point2f& p) const
+Specular::sample_f(const Vector3f& wi, const Point2f& p) const
 {
-    const auto wo = reflect(-wi, n);
+    const auto [x, y, z] = wi;
+    const Vector3f wo{-x, -y, z};
     return {Spectrum{1}, wo, 1};
 }

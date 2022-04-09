@@ -18,8 +18,9 @@ f32 Lambertian::pdf(const Vector3f& wi, const Vector3f& wo) const
 }
 
 std::tuple<Spectrum, Vector3f, f32>
-Lambertian::sample_f(const Vector3f& wi, const Vector3f& n, const Point2f& p) const
+Lambertian::sample_f(const Vector3f& wi, const Point2f& p) const
 {
-    const auto wo = as<Vector3, f32>(Sample::cosine_hemisphere(p));
-    return {f(wi, wo), local_to_world(n, wo), pdf(wi, wo)}; 
+    auto wo = as<Vector3, f32>(Sample::cosine_hemisphere(p));
+    // wo.z = std::copysign(wo.z, wi.z);
+    return {f(wi, wo), wo, pdf(wi, wo)}; 
 }

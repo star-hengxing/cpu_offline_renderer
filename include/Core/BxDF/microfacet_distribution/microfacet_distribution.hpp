@@ -4,10 +4,11 @@
 #include <Hinae/Point2.hpp>
 
 using namespace Hinae;
+using Spectrum = Vector3f;
 
-struct Microface
+struct microfacet_distribution
 {
-    virtual ~Microface() = default;
+    virtual ~microfacet_distribution() = default;
 
     static f32 roughness_to_alpha(f32 roughness);
 
@@ -19,8 +20,8 @@ struct Microface
 
     f32 G(const Vector3f& wi, const Vector3f& wo) const;
 
-    virtual Vector3f Sample_f(
-        const Vector3f& wi, const Vector3f& n, const Point2f& u) const = 0;
+    virtual std::tuple<Spectrum, Vector3f, f32>
+    sample_f(const Vector3f& wi, const Point2f& u) const = 0;
 
     virtual f32 PDF(const Vector3f& wi, const Vector3f& wh) const = 0;
 };

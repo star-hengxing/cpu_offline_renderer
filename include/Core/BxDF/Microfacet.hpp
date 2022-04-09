@@ -1,14 +1,16 @@
 #pragma once
 
 #include "BxDF.hpp"
+#include "microfacet_distribution/trowbridge_reitz.hpp"
 
-struct Dielectric : public BxDF
+struct Microfacet : public BxDF
 {
 private:
-    const f32 eta;
+    const Spectrum R;
+    const trowbridge_reitz distribution;
 
 public:
-    Dielectric(f32 eta);
+    Microfacet(const Spectrum& R, f32 alpha_x, f32 alpha_y);
 
     virtual Spectrum f(const Vector3f& wi, const Vector3f& wo) const override;
 

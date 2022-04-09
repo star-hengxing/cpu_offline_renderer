@@ -21,7 +21,7 @@ Spectrum direct_light_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         if(is_shadow && is_shadow->t_min <= t) continue;
 
         const Spectrum Li = light->Li(record->p);
-        const Spectrum f = record->bxdf->f(wi, light_dir);
+        const Spectrum f = record->bsdf.f(wi, light_dir);
         const f32 cos = max(0.0f, dot(record->n, wi));
 
         color += Li * f * cos;

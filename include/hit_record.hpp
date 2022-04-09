@@ -7,7 +7,7 @@
 
 using namespace Hinae;
 
-struct BxDF;
+#include <Core/BSDF.hpp>
 
 struct hit_record
 {
@@ -15,7 +15,7 @@ struct hit_record
     Point3f p;
     Vector3f n;
     Point2f uv;
-    BxDF* bxdf;
+    BSDF bsdf;
 
     hit_record() = default;
 

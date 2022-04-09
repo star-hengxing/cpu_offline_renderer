@@ -6,5 +6,6 @@
 
 void Mirror::compute(hit_record& record) const
 {
-    record.bxdf = BxDF_memory_pool::get().alloc<Specular>(Spectrum{1});
+    BxDF* bxdf = BxDF_memory_pool::get().alloc<Specular>(Spectrum{1});
+    record.bsdf = BSDF{record, bxdf};
 }

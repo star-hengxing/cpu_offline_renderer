@@ -36,5 +36,5 @@ public:
     virtual f32 pdf(const Vector3f& wi, const Vector3f& wo) const = 0;
     // radiance, sample direction, pdf
     virtual std::tuple<Spectrum, Vector3f, f32>
-    sample_f(const Vector3f& wi, const Vector3f& n, const Point2f& p) const = 0;
+    sample_f(const Vector3f& wi, const Point2f& p) const = 0;
 };
