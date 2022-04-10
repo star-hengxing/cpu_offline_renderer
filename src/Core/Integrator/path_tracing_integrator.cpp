@@ -28,7 +28,7 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
                 const auto [dir, t] = light->get_dir_and_distance(p);
                 const Ray3f shadow_ray = record->new_ray(dir);
 
-                const std::optional<hit_record> is_shadow = scene.bvh_intersect(shadow_ray);
+                const std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray);
                 if(is_shadow && is_shadow->t_min <= t) continue;
 
                 const Spectrum Li = light->Li(p);

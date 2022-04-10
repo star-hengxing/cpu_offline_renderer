@@ -70,5 +70,5 @@ public:
 
     std::optional<hit_record> bvh_intersect(const Ray3f& ray) const;
 
-    bool bvh_intersect_p(const Ray3f& shadow_ray) const;
+    std::optional<hit_record> bvh_intersect_p(const Ray3f& shadow_ray) const;
 };

@@ -19,16 +19,17 @@ template <typename... T>
 struct memory_pool
 {
 private:
-    static constexpr auto block = 2;
     static constexpr auto size = max_size<T...>();
 
-    usize index = 0;
-    char memory[size * block];
+    char memory[size];
+
+    memory_pool() {}
 
 public:
-    memory_pool() {}
     memory_pool(memory_pool&&) = delete;
     memory_pool(const memory_pool&) = delete;
+    memory_pool& operator = (memory_pool&&) = delete;
+    memory_pool& operator = (const memory_pool&) = delete;
 
     static auto& get() noexcept
     {
@@ -39,13 +40,13 @@ public:
     template <typename U, typename... Args>
     U* alloc(Args&&... args)
     {
-        index = (index < block) ? index + 1 : 0;
-        void* address = std::addressof(memory[size * (index - 1)]);
-        return new (address) U(std::forward<Args>(args)...);
+        return new (memory) U(std::forward<Args>(args)...);
     }
 };
 
 #include <Core/BxDF/Lambertian.hpp>
+#include <Core/BxDF/Microfacet.hpp>
+#include <Core/BxDF/Dielectric.hpp>
 #include <Core/BxDF/Specular.hpp>
 
-using BxDF_memory_pool = memory_pool<Lambertian, Specular>;
+using BxDF_memory_pool = memory_pool<Lambertian, Specular, Dielectric, Microfacet>;

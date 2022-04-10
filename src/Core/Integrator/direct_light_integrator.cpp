@@ -17,7 +17,7 @@ Spectrum direct_light_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         const auto [light_dir, t] = light->get_dir_and_distance(record->p);
         const Ray3f shadow_ray = record->new_ray(light_dir);
 
-        std::optional<hit_record> is_shadow = scene.bvh_intersect(shadow_ray);
+        std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray);
         if(is_shadow && is_shadow->t_min <= t) continue;
 
         const Spectrum Li = light->Li(record->p);

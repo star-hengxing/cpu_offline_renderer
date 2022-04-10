@@ -236,21 +236,19 @@ std::optional<hit_record> BVH::intersect(const Ray3f& ray) const
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
 
     const auto primitive = recursive_intersect(ray, record, inv_dir, dir_is_negative);
-    if(primitive)
-    {
-        primitive->get_intersect_record(ray, record);
-        primitive->compute_BxDF(record);
-        return std::make_optional(record);
-    }
-    else
-        return {};
+    if(!primitive) return {};
+
+    primitive->get_intersect_record(ray, record);
+    primitive->compute_BxDF(record);
+    return record;
 }
 
-bool BVH::intersect_p(const Ray3f& shadow_ray) const
+std::optional<hit_record> BVH::intersect_p(const Ray3f& shadow_ray) const
 {
     hit_record record;
     const auto [x, y, z] = shadow_ray.direction;
     const Vector3f inv_dir{1 / x, 1 / y, 1 / z};
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
-    return recursive_intersect(shadow_ray, record, inv_dir, dir_is_negative) != nullptr;
+    const auto primitive = recursive_intersect(shadow_ray, record, inv_dir, dir_is_negative);
+    return primitive ? std::make_optional(record) : std::nullopt;
 }

@@ -142,7 +142,7 @@ std::optional<hit_record> Scene::bvh_intersect(const Ray3f &ray) const
     return bvh.intersect(ray);
 }
 
-bool Scene::bvh_intersect_p(const Ray3f& shadow_ray) const
+std::optional<hit_record> Scene::bvh_intersect_p(const Ray3f& shadow_ray) const
 {
     return bvh.intersect_p(shadow_ray);
 }
