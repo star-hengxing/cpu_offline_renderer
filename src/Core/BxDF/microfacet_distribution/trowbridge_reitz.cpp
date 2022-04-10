@@ -45,22 +45,22 @@ Vector3f trowbridge_reitz::sample_wm(const Vector3f& w, const Point2f& p) const
     if(wh.z < 0) wh = -wh;
 
     const Vector3f T1 = (wh.z < 0.99999f) ? cross(Vector3f(0, 0, 1), wh).normalized()
-                                    : Vector3f(1, 0, 0);
+                                          : Vector3f(1, 0, 0);
     const Vector3f T2 = cross(wh, T1);
-    
+
     const f32 a = 1.0f / (1.0f + wh.z);
     const f32 r = std::sqrt(p.x);
     const f32 phi = (p.y < a) ? p.y / a * PI<f32> : PI<f32> + (p.y - a) / (1.0f - a) * PI<f32>;
 
-    const Vector2f v
+    Vector2f v
     {
         r * std::cos(phi),
         r * std::sin(phi) * ((p.y < a) ? 1.0f : wh.z)
     };
-    
-    const auto [p1, p2] = v;
 
-    const f32 p3 = std::sqrt(max(0.0f, 1.0f - v.norm2()));
-    const Vector3f n = p1 * T1 + p2 * T2 + p3 * wh;
+    v.y = lerp(std::sqrt(1 - pow2(v.x)), v.y, (1 + wh.z) / 2);
+
+    const f32 vx = std::sqrt(max(0.0f, 1 - v.norm2()));
+    const Vector3f n = v.x * T1 + v.y * T2 + vx * wh;
     return Vector3f(alpha_x * n.x, alpha_y * n.y, max(0.0f, n.z)).normalized();
 }
