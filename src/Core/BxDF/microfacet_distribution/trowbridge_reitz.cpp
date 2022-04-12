@@ -2,6 +2,9 @@
 
 #include <Hinae/Trigonometric.hpp>
 
+trowbridge_reitz::trowbridge_reitz(f32 alpha_x, f32 alpha_y)
+    : alpha_x(alpha_x), alpha_y(alpha_y) {}
+
 f32 trowbridge_reitz::G1(const Vector3f& w) const
 {
     return 1 / (1 + lambda(w));
@@ -12,9 +15,9 @@ f32 trowbridge_reitz::G(const Vector3f& wi, const Vector3f& wo) const
     return 1 / (1 + lambda(wi) + lambda(wo));
 }
 
-f32 trowbridge_reitz::PDF(const Vector3f& w, const Vector3f& wm) const
+f32 trowbridge_reitz::PDF(const Vector3f& wi, const Vector3f& wh) const
 {
-    return D(w, wm);
+    return D(wh) * G1(wi) * std::abs(dot(wi, wh)) * Local::abs_cos_theta(wi);
 }
 
 f32 trowbridge_reitz::D(const Vector3f& w, const Vector3f& wm) const
@@ -36,7 +39,7 @@ f32 trowbridge_reitz::lambda(const Vector3f& w) const
     const f32 tan2 = std::abs(Local::tan2_theta(w));
     if(std::isinf(tan2)) return 0;
     const f32 alpha2 = pow2(Local::cos2_phi(w) * alpha_x) + pow2(Local::sin2_phi(w) * alpha_y);
-    return (-1 + std::sqrt(1.0f + alpha2 + tan2)) / 2;
+    return (-1 + std::sqrt(1 + alpha2 * tan2)) / 2;
 }
 
 Vector3f trowbridge_reitz::sample_wm(const Vector3f& w, const Point2f& p) const
@@ -58,7 +61,7 @@ Vector3f trowbridge_reitz::sample_wm(const Vector3f& w, const Point2f& p) const
         r * std::sin(phi) * ((p.y < a) ? 1.0f : wh.z)
     };
 
-    v.y = lerp(std::sqrt(1 - pow2(v.x)), v.y, (1 + wh.z) / 2);
+    // v.y = lerp(std::sqrt(1 - pow2(v.x)), v.y, (1 + wh.z) / 2);
 
     const f32 vx = std::sqrt(max(0.0f, 1 - v.norm2()));
     const Vector3f n = v.x * T1 + v.y * T2 + vx * wh;

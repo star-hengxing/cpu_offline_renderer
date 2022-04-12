@@ -26,5 +26,5 @@ public:
 
     Vector3f sample_wm(const Vector3f& w, const Point2f& p) const;
 
-    f32 PDF(const Vector3f& w, const Vector3f& wm) const;
+    f32 PDF(const Vector3f& wi, const Vector3f& wh) const;
 };
