@@ -2,14 +2,19 @@
 
 #include "Light.hpp"
 
-struct point_light : public Light
+#include <memory>
+
+struct Shape;
+
+struct area_light : public Light
 {
 protected:
-    const Point3f position;
-    const Vector3f intensity;
+    const std::shared_ptr<Shape> shape;
+    const Spectrum emit;
+    const f32 area;
 
 public:
-    point_light(const Point3f& position, const Vector3f& intensity);
+    area_light(const std::shared_ptr<Shape>& shape, const Spectrum& emit);
 
     virtual Spectrum Li(const hit_record& record, const Vector3f& w) const;
 

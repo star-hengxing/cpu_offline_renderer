@@ -7,6 +7,11 @@ bool hit_record::is_hit() const
     return t_min < INFINITY_<f32>;
 }
 
+bool hit_record::is_light() const
+{
+    return light != nullptr;
+}
+
 bool hit_record::set_t(f32 t)
 {
     if(t >= t_min || t <= 0.001f)

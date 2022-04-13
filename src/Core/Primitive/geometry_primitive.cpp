@@ -6,12 +6,17 @@
 
 geometry_primitive::geometry_primitive(
     std::shared_ptr<Shape> shape
-    , std::shared_ptr<Material> material)
-    : shape(shape), material(material) {}
+    , std::shared_ptr<Material> material
+    , std::shared_ptr<Light> light)
+    : shape(shape), material(material), light(light) {}
 
 bool geometry_primitive::intersect(const Ray3f& ray3, hit_record& record) const
 {
-    return shape->intersect(ray3, record);
+    bool is_hit = shape->intersect(ray3, record);
+
+    if(light) record.light = light;
+
+    return is_hit;
 }
 
 Bounds3f geometry_primitive::world_bound() const

@@ -1,5 +1,7 @@
 #include <Core/Light/spot_light.hpp>
 
+#include <hit_record.hpp>
+
 spot_light::spot_light(const Point3f& position
         , const Vector3f& intensity
         , f32 cos_width, f32 cos_falloff
@@ -9,15 +11,10 @@ spot_light::spot_light(const Point3f& position
     , cos_falloff(std::cos(to_radian(cos_falloff)))
     , dir(dir) {}
 
-Spectrum spot_light::Li(const Point3f& p) const
+Spectrum spot_light::Li(const hit_record& record, const Vector3f& w) const
 {
-    const Vector3f direction = position - p;
+    const Vector3f direction = position - record.p;
     return intensity * falloff(-direction.normalized()) / direction.norm2();
-}
-
-std::tuple<Vector3f, f32> spot_light::get_dir_and_distance(const Point3f& p) const
-{
-    return point_light::get_dir_and_distance(p);   
 }
 
 f32 spot_light::falloff(const Vector3f& v) const
