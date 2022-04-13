@@ -42,3 +42,30 @@ void Plane::get_intersect_record(const Ray3f& ray3, hit_record& record) const
     record.n  = local_to_world * get_normal();
     record.uv = {record.p.x, record.p.z};
 }
+
+f32 Plane::area() const
+{
+    return pow2(length + length);
+}
+
+std::tuple<Point3f, f32> Plane::sample(const Point2f& random) const
+{
+    const auto [x, z] = random;
+    const Point3f p
+    {
+        length * (x * 2 - 1),
+        local_y,
+        length * (z * 2 - 1)
+    };
+
+    return
+    {
+        local_to_world * p,
+        pdf(random)
+    };
+}
+
+f32 Plane::pdf(const Point2f& random) const
+{
+    return 1 / area();
+}

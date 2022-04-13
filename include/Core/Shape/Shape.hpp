@@ -2,6 +2,8 @@
 
 #include <Hinae/Matrix4.hpp>
 #include <Hinae/Bounds3.hpp>
+#include <Hinae/Point3.hpp>
+#include <Hinae/Point2.hpp>
 #include <Hinae/Ray3.hpp>
 
 using namespace Hinae;
@@ -28,4 +30,10 @@ public:
     virtual Bounds3f local_bound() const = 0;
 
     virtual void get_intersect_record(const Ray3f& ray3, hit_record& record) const = 0;
+    
+    virtual f32 area() const {};
+
+    virtual std::tuple<Point3f, f32> sample(const Point2f& random) const {};
+
+    virtual f32 pdf(const Point2f& random) const {};
 };
