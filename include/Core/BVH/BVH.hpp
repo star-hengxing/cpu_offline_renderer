@@ -113,5 +113,5 @@ public:
 
     std::optional<hit_record> intersect(const Ray3f& ray) const;
 
-    std::optional<hit_record> intersect_p(const Ray3f& shadow_ray) const;
+    std::optional<hit_record> intersect_p(const Ray3f& shadow_ray, f32 t_max) const;
 };

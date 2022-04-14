@@ -14,7 +14,7 @@ bool hit_record::is_light() const
 
 bool hit_record::set_t(f32 t)
 {
-    if(t >= t_min || t <= 0.001f)
+    if(t >= t_min || t <= 0.001f || t >= t_max)
         return false;
 
     t_min = t;

@@ -16,6 +16,7 @@ struct Light;
 struct hit_record
 {
     f32 t_min = INFINITY_<f32>;
+    f32 t_max = INFINITY_<f32>;
     Point3f p;
     Vector3f n;
     Point2f uv;

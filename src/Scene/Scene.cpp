@@ -116,14 +116,10 @@ std::optional<hit_record> Scene::intersect(const Ray3f &ray) const
             primitive = v;
     }
 
-    if(primitive)
-    {
-        primitive->get_intersect_record(ray, record);
-        primitive->compute_BxDF(record);
-        return std::make_optional(record);
-    }
-    else
-        return {};
+    if(!primitive) return {};
+    primitive->get_intersect_record(ray, record);
+    primitive->compute_BxDF(record);
+    return std::make_optional(record);
 }
 
 bool Scene::intersect_p(const Ray3f& shadow_ray) const
@@ -142,7 +138,7 @@ std::optional<hit_record> Scene::bvh_intersect(const Ray3f &ray) const
     return bvh.intersect(ray);
 }
 
-std::optional<hit_record> Scene::bvh_intersect_p(const Ray3f& shadow_ray) const
+std::optional<hit_record> Scene::bvh_intersect_p(const Ray3f& shadow_ray, f32 t_max) const
 {
-    return bvh.intersect_p(shadow_ray);
+    return bvh.intersect_p(shadow_ray, t_max);
 }

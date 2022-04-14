@@ -20,12 +20,12 @@ Spectrum direct_light_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         const auto [light_dir, t, pdf] = light->sample_li(record->p, sampler.get_2D());
         const Ray3f shadow_ray = record->new_ray(light_dir);
 
-        std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray);
-        if(is_shadow && is_shadow->t_min <= t) continue;
+        const std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray, t);
+        if(is_shadow) continue;
 
-        const Spectrum Li = light->Li(*record, wi);
+        const Spectrum Li = light->Li(*record, -light_dir);
         const Spectrum f = record->bsdf.f(wi, light_dir);
-        const f32 cos = max(0.0f, dot(record->n, wi));
+        const f32 cos = max(0.0f, dot(record->n, light_dir));
 
         color += Li * f * cos;
     }

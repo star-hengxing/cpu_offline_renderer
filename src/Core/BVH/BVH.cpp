@@ -243,9 +243,10 @@ std::optional<hit_record> BVH::intersect(const Ray3f& ray) const
     return record;
 }
 
-std::optional<hit_record> BVH::intersect_p(const Ray3f& shadow_ray) const
+std::optional<hit_record> BVH::intersect_p(const Ray3f& shadow_ray, f32 t_max) const
 {
     hit_record record;
+    record.t_max = t_max;
     const auto [x, y, z] = shadow_ray.direction;
     const Vector3f inv_dir{1 / x, 1 / y, 1 / z};
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
