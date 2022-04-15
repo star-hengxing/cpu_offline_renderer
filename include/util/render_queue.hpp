@@ -1,33 +1,35 @@
+#include <condition_variable>
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include <condition_variable>
-#include <vector>
-// #include <array>
+#include <memory>
 
 #include "util.hpp"
 
+using u32 = std::uint_fast32_t;
+
 template <typename T> requires
-requires(usize h, T fn) { { fn(h) } -> std::same_as<void>; }
+requires(u32 h, T fn) { { fn(h) } -> std::same_as<void>; }
 struct render_queue
 {
 protected:
-    const usize height;
+    const u32 height;
+    const u32 count;
     const T fn;
     bool running = true;
-    std::atomic<usize> current_height = 0;
+    std::atomic<u32> current_height = 0;
 
     using worker = std::jthread;
 
     std::condition_variable cv;
-    std::vector<worker> queue;
+    std::unique_ptr<worker[]> queue;
 
 protected:
     void work()
     {
         while(running)
         {
-            usize h;
+            u32 h;
             if(get(h))
             {
                 fn(h); // render by line
@@ -40,10 +42,9 @@ protected:
         }
     }
 
-    void start() { running = true; }
     void stop() { running = false; }
 
-    bool get(usize& i)
+    bool get(u32& i)
     {
         if(current_height < height)
         {
@@ -54,20 +55,40 @@ protected:
         return false;
     }
 
-public:
-    render_queue(usize height, T fn) : height(height), fn(fn)
+    template <typename U>
+    void handle_threads(U fn)
     {
-        const auto size = worker::hardware_concurrency();
-        queue.reserve(size);
-        for_each(size, [&]()
-        { 
-            queue.emplace_back(worker{&render_queue::work, this});
+        for(auto i : range(count))
+        {
+            fn(queue[i]);
+        }
+    }
+
+public:
+    render_queue() = delete;
+    render_queue(const render_queue&) = delete;
+    render_queue(render_queue&&) = delete;
+    render_queue& operator = (const render_queue&) = delete;
+    render_queue& operator = (render_queue&&) = delete;
+
+    render_queue(u32 thread_count, u32 height, T fn)
+        : height(height)
+        , count(thread_count)
+        , fn(fn)
+        , queue(std::make_unique<worker[]>(count))
+    {
+        handle_threads([&](worker& w)
+        {
+            w = worker{&render_queue::work, this};
         });
     }
 
     ~render_queue()
     {
-        stop();
+        if(running)
+        {
+            wait();
+        }
     }
 
     void wait()
@@ -76,12 +97,11 @@ public:
         std::unique_lock lock(m);
         cv.wait(lock);
         // cv.wait(lock, [&](){ return current_height >= height; });
-    }
-
-    void run_and_wait()
-    {
-        start();
-        wait();
         stop();
+        handle_threads([&](worker& w)
+        {
+            if(w.joinable())
+                w.join();
+        });
     }
 };

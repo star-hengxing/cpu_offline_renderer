@@ -2,6 +2,7 @@
 
 #include <util/Color/color_space.hpp>
 #include <Core/Sampler/Sampler.hpp>
+#include <util/render_queue.hpp>
 #include <make_scene.hpp>
 #include <util/util.hpp>
 
@@ -15,9 +16,17 @@ Renderer::Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<I
 
 using namespace std::literals;
 
+usize spp = 4;
+usize thread_count = 0;
+
 Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
 {
-    // if(argc != 2) return Err("invalid parameter"sv);
+    if(argc >= 2)
+    {
+        spp = std::atoi(argv[1]);
+        if(argc == 3)
+            thread_count = std::atoi(argv[2]);
+    }
 
     auto [scene, camera, integrator] = parse();
 
@@ -30,13 +39,14 @@ Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
 
 void Renderer::render()
 {
-    const usize spp = 4;
     const auto [width, height] = camera.photo.get_width_height();
-    thread_local Sampler sampler;
-
     println("rendering...");
-    Timer::elapsed([&]()
+
+    Timer timer;
+    if(thread_count == 0)
     {
+        thread_local Sampler sampler;
+
         for(usize y : range(height))
         {
             for(usize x : range(width))
@@ -53,7 +63,31 @@ void Renderer::render()
             }
             bar(static_cast<f64>(y) / height);
         }
-    });
+    }
+    else
+    {
+        std::mutex m;
+        const auto count = min(thread_count, static_cast<usize>(std::jthread::hardware_concurrency()));
+        render_queue{count, height, [&](usize y)
+        {
+            static thread_local Sampler sampler;
+            for(usize x : range(width))
+            {
+                Spectrum radiance = arithmetic_mean(spp, [&]()
+                {
+                    Point2f pixel = sampler.get_2D();
+                    pixel.x += x;
+                    pixel.y += y;
+                    Ray3f ray = camera.generate_ray(pixel);
+                    return clamp(0.0f, integrator->Li(ray, scene, sampler), 1.0f);
+                });
+                camera.photo[x][y] = color_space(radiance).to_srgb();
+            }
+            std::scoped_lock lock(m);
+            bar(static_cast<f64>(y) / height);
+        }};
+    }
 
+    timer.elapsed();
     camera.save_photo("images/dev.png");
 }

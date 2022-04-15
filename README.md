@@ -11,11 +11,12 @@
 ```bash
 mkdir cg
 cd cg
+mkdir images
 git clone https://github.com/star-hengxing/Hinae.git
 git clone https://github.com/star-hengxing/cpu_offline_renderer
 cd cpu_offline_renderer
 xmake build main
-xmake run main examples/Scene/test.rts
+xmake run main
 ```
 
 等待渲染结束，你可以在images目录里查看渲染图片
@@ -61,7 +62,7 @@ xmake run main examples/Scene/test.rts
 * 光源
     - [x] 点光源(Point Light)
     - [x] 聚光灯(Spot Light)
-    - [ ] 面光源(Area Light)
+    - [x] 面光源(Area Light)
 
 * 相机
     - [ ] 正交相机(Orthographic Camera)
