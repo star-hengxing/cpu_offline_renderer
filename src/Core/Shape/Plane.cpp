@@ -48,7 +48,7 @@ f32 Plane::area() const
     return pow2(length + length);
 }
 
-std::tuple<Point3f, f32> Plane::sample(const Point2f& random) const
+std::tuple<Point3f, Vector3f, f32> Plane::sample(const Point2f& random) const
 {
     const auto [x, z] = random;
     const Point3f p
@@ -61,6 +61,7 @@ std::tuple<Point3f, f32> Plane::sample(const Point2f& random) const
     return
     {
         local_to_world * p,
+        local_to_world * get_normal(),
         pdf(random)
     };
 }

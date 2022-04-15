@@ -29,18 +29,19 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         // direct radiance
         for(const auto& light : scene.lights)
         {
-            const auto [dir, t, pdf] = light->sample_li(p, sampler.get_2D());
-            const Ray3f shadow_ray = record->new_ray(dir);
+            const std::optional<light_sample> payload = light->sample_li(p, sampler.get_2D());
+            if(!payload) continue;
 
-            const std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray);
-            if(is_shadow && is_shadow->t_min <= t) continue;
+            const auto [wl, light_n, t, pdf, Li] = *payload;
 
-            const Spectrum Li = light->Li(*record, wi);
-            const Spectrum f = record->bsdf.f(wi, dir);
-            const f32 cos = max(0.0f, dot(n, dir));
+            const Ray3f shadow_ray = record->new_ray(wl);
+            if(scene.bvh_intersect_p(shadow_ray, t - 0.001f)) continue;
 
-            const Spectrum direct = Li * f * cos;
-            radiance += direct * tmp / pdf;
+            const Spectrum f = record->bsdf.f(wi, wl);
+            const f32 cos = max(0.0f, dot(n, wl));
+
+            const Spectrum direct = Li * f * cos / pdf;
+            radiance += direct * tmp;
         }
         // indirect radiance
         const auto [f, wo, pdf] = record->bsdf.sample_f(wi, sampler.get_2D());

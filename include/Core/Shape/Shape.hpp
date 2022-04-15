@@ -33,7 +33,7 @@ public:
     
     virtual f32 area() const {};
 
-    virtual std::tuple<Point3f, f32> sample(const Point2f& random) const {};
+    virtual std::tuple<Point3f, Vector3f, f32> sample(const Point2f& random) const {};
 
     virtual f32 pdf(const Point2f& random) const {};
 };

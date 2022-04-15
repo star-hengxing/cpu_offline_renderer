@@ -9,7 +9,7 @@
 Spectrum direct_light_integrator::Li(const Ray3f& ray, const Scene& scene, Sampler& sampler) const
 {
     Spectrum color{0};
-    std::optional<hit_record> record = scene.bvh_intersect(ray);
+    const std::optional<hit_record> record = scene.bvh_intersect(ray);
     if(!record) return color;
 
     const Vector3f wi = -ray.direction;
@@ -17,17 +17,18 @@ Spectrum direct_light_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
 
     for(const auto& light : scene.lights)
     {
-        const auto [light_dir, t, pdf] = light->sample_li(record->p, sampler.get_2D());
-        const Ray3f shadow_ray = record->new_ray(light_dir);
+        const std::optional<light_sample> payload = light->sample_li(record->p, sampler.get_2D());
+        if(!payload) continue;
 
-        const std::optional<hit_record> is_shadow = scene.bvh_intersect_p(shadow_ray, t);
-        if(is_shadow) continue;
+        const auto [wl, light_n, t, pdf, Li] = *payload;
 
-        const Spectrum Li = light->Li(*record, -light_dir);
-        const Spectrum f = record->bsdf.f(wi, light_dir);
-        const f32 cos = max(0.0f, dot(record->n, light_dir));
+        const Ray3f shadow_ray = record->new_ray(wl);
+        if(scene.bvh_intersect_p(shadow_ray, t - 0.001f)) continue;
 
-        color += Li * f * cos;
+        const Spectrum f = record->bsdf.f(wi, wl);
+        const f32 cos = max(0.0f, dot(record->n, wl));
+
+        color += Li * f * cos / pdf;
     }
     return color;
     // return (record->n + 1) / 2;
