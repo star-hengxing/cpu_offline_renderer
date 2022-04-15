@@ -14,7 +14,7 @@ public:
         , f32 cos_width, f32 cos_falloff
         , const Vector3f& dir);
 
-    virtual Spectrum Li(const hit_record& record, const Vector3f& w) const;
+    virtual Spectrum Li(const Point3f& p) const;
 
     f32 falloff(const Vector3f& v) const;
 };

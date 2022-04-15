@@ -11,9 +11,9 @@ spot_light::spot_light(const Point3f& position
     , cos_falloff(std::cos(to_radian(cos_falloff)))
     , dir(dir) {}
 
-Spectrum spot_light::Li(const hit_record& record, const Vector3f& w) const
+Spectrum spot_light::Li(const Point3f& p) const
 {
-    const Vector3f direction = position - record.p;
+    const Vector3f direction = position - p;
     return intensity * falloff(-direction.normalized()) / direction.norm2();
 }
 

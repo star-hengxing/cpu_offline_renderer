@@ -7,22 +7,22 @@ area_light::area_light(const std::shared_ptr<Shape>& shape, const Spectrum& emit
     : Light(Flags::area)
     , shape(shape), emit(emit), area(shape->area()) {}
 
+Spectrum area_light::Li(const Vector3f& normal, const Vector3f& emit_dir) const
+{
+    return dot(normal, emit_dir) > 0 ? emit : Spectrum{0};
+}
+
 Spectrum area_light::Li(const hit_record& record, const Vector3f& w) const
 {
-    return dot(record.n, w) > 0 ? emit : Spectrum{0};
+    return Li(record.n, w);
 }
 
-std::tuple<Vector3f, f32> area_light::get_dir_and_distance(const Point3f& p) const
+std::optional<light_sample> area_light::sample_li(const Point3f& p, const Point2f& random) const
 {
-    return {{0}, 0};
-}
-
-std::tuple<Vector3f, f32, f32> area_light::sample_li(const Point3f& p, const Point2f& random) const
-{
-    const auto [random_p, pdf] = shape->sample(random);
-    const Vector3f direction = (random_p - p).normalized();
-    const f32 t = distance(p, random_p);
-    return {direction, t, pdf};
+    const auto [light_p, light_n, pdf] = shape->sample(random);
+    const Vector3f direction = (light_p - p).normalized();
+    const f32 t = distance(p, light_p);
+    return light_sample{direction, light_n, t, pdf, Li(light_n, -direction)};
 }
 
 f32 area_light::pdf_li(const Point3f& p) const
