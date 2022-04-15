@@ -21,6 +21,13 @@ xmake run main
 
 等待渲染结束，你可以在images目录里查看渲染图片
 
+可以通过命令行参数传递spp和线程数，默认单线程，spp=4
+
+```bash
+xmake run <spp> <thread count>
+xmake run main 1024 4
+```
+
 # Feature
 
 * 光线传输算法
@@ -43,12 +50,10 @@ xmake run main
 
 * BXDF
     - [x] 漫反射(Lambertian)
-    - [ ] Specular 反射透射
-    - [ ] fresnel 高光
     - [ ] Oren-Nayer
-    - [ ] microfacet
-    - [ ] 傅里叶BSDF
-    - [ ] 次表面散射BSSRDF
+    - [x] 微表面(GGX microfacet)
+    - [ ] 傅里叶(BSDF)
+    - [ ] 次表面散射(BSSRDF)
 
 * 材质
     - [x] matte
