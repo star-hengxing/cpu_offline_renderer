@@ -3,7 +3,7 @@
 #include <Hinae/physics.hpp>
 
 Dielectric::Dielectric(f32 eta)
-    : BxDF(Type(Type::Transmission | Type::Reflection)), eta(eta) {}
+    : BxDF(bxdf_type(bxdf_type::Transmission | bxdf_type::Reflection | bxdf_type::Specular)), eta(eta) {}
 
 Spectrum Dielectric::f(const Vector3f& wi, const Vector3f& wo) const
 {
@@ -15,26 +15,32 @@ f32 Dielectric::pdf(const Vector3f& wi, const Vector3f& wo) const
     return 0;
 }
 
-std::tuple<Spectrum, Vector3f, f32>
-Dielectric::sample_f(const Vector3f& wi, const Point2f& p) const
+std::optional<bxdf_sample> Dielectric::sample_f(const Vector3f& wi, const Point2f& p) const
 {
-    // f32 cos_theta = dot(wi, n);
-    // f32 F = Fresnel::dielectric(cos_theta, 1.0f, eta);
-    // Vector3f wo;
-    // if(p[0] < F)
-    // {
-    //     wo = reflect(-wi, n);
-    //     return {Spectrum{F / std::abs(dot(wo, n))}, wo, F};
-    // }
-    // else
-    // {
-    //     f32 ref_idx = (cos_theta > 0) ? 1.0f / eta : eta;
-    //     std::optional<Vector3f> has_refract = refract(wi, n, ref_idx);
+    f32 cos = Local::cos_theta(wi);
+    f32 R = Fresnel::dielectric(cos, 1.0f, eta);
+    f32 T = 1 - R;
 
-    //     if(!has_refract) return {Spectrum{1}, reflect(-wi, n), 1};
+    Vector3f wo;
+    Spectrum f;
+    f32 pdf;
+    if(p[0] < R / (R + T))
+    {
+        wo = reflect(wi);
+        f = R / Local::abs_cos_theta(wo);
+        pdf = R / (R + T);
+    }
+    else
+    {
+        f32 ref_idx = cos > 0 ? 1 / eta : eta;
+        auto normal = cos > 0 ? Vector3f{0, 0, 1} : Vector3f{0, 0, -1};
+        std::optional<Hinae::Vector3f> is_refract = refract(-wi, normal, ref_idx);
+        // total internal reflection
+        if(!is_refract) return {};
 
-    //     wo = has_refract.value();
-    //     return {Spectrum{(1 - F) / std::abs(dot(wo, n))}, wo, 1 - F};
-    // }
-    return {{0}, {0}, 0};
+        wo = *is_refract;
+        f = T / Local::abs_cos_theta(wo);
+        pdf = T / (R + T);
+    }
+    return bxdf_sample{f, wo, pdf, type};
 }

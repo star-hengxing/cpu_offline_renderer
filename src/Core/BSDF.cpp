@@ -29,11 +29,15 @@ Spectrum BSDF::f(const Vector3f& wi, const Vector3f& wo) const
     return bxdf->f(to_local(wi), to_local(wo));
 }
 
-std::tuple<Spectrum, Vector3f, f32>
-BSDF::sample_f(const Vector3f& wi, const Point2f& p) const
+std::optional<bsdf_sample> BSDF::sample_f(const Vector3f& wi, const Point2f& p) const
 {
-    const auto local_wi = to_local(wi);
-    auto [f, wo, pdf] = bxdf->sample_f(local_wi, p);
+    std::optional<bxdf_sample> optional = bxdf->sample_f(to_local(wi), p);
+    if(!optional) return {};
+
+    auto [f, wo, pdf, type] = *optional;
+    if(is_zero(f.norm2()) || is_zero(pdf)) return {};
+
     wo = to_world(wo);
-    return {f, wo, pdf};
+    bool is_specular_ = BxDF::is_specular(type);
+    return bsdf_sample{f, wo, pdf, is_specular_};
 }

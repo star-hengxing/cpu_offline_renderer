@@ -2,10 +2,9 @@
 
 #include <Hinae/Trigonometric.hpp>
 #include <Hinae/physics.hpp>
-#include <global.hpp>
 
 Microfacet::Microfacet(const Spectrum& R, f32 alpha_x, f32 alpha_y, f32 eta)
-    : BxDF(Type(Type::Reflection | Type::Glossy))
+    : BxDF(bxdf_type(bxdf_type::Reflection | bxdf_type::Glossy))
     , R(R), distribution(alpha_x, alpha_y), eta(eta) {}
 
 Spectrum Microfacet::f(const Vector3f& wi, const Vector3f& wo) const
@@ -30,11 +29,10 @@ f32 Microfacet::pdf(const Vector3f& wi, const Vector3f& wo) const
     return distribution.PDF(wi, wh) / (4 * dot(wi, wh));
 }
 
-std::tuple<Spectrum, Vector3f, f32>
-Microfacet::sample_f(const Vector3f& wi, const Point2f& p) const
+std::optional<bxdf_sample> Microfacet::sample_f(const Vector3f& wi, const Point2f& p) const
 {
     Vector3f wh = distribution.sample_wm(wi, p);
     if(wi.z * wh.z < 0) wh = -wh;
-    Vector3f wo = -reflect(wi, wh);
-    return {f(wi, wo), wo, distribution.PDF(wi, wh) / (4 * dot(wi, wh))};
+    Vector3f wo = Hinae::reflect(-wi, wh);
+    return bxdf_sample{f(wi, wo), wo, distribution.PDF(wi, wh) / (4 * dot(wi, wh)), type};
 }

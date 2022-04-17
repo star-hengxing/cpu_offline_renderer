@@ -10,9 +10,10 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
 {
     Spectrum radiance{0};
     Spectrum tmp{1};
+    bool specular_bounce = false;
 
     Ray3f trace_ray = ray;
-    for([[maybe_unused]] usize bonus = 0;; bonus += 1)
+    for(usize bounce = 0;; bounce += 1)
     {
         const std::optional<hit_record> record = scene.bvh_intersect(trace_ray);
         if(!record) return radiance;
@@ -23,7 +24,10 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         
         if(record->is_light())
         {
-            radiance += record->light->Li(*record, wi) * tmp;
+            if(bounce == 0 || specular_bounce)
+            {
+                radiance += record->light->Li(*record, wi) * tmp;
+            }
             return radiance;
         }
         // direct radiance
@@ -44,10 +48,15 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
             radiance += direct * tmp;
         }
         // indirect radiance
-        const auto [f, wo, pdf] = record->bsdf.sample_f(wi, sampler.get_2D());
-        const f32 cos = max(0.0f, dot(n, wo));
+        std::optional<bsdf_sample> bsdf = record->bsdf.sample_f(wi, sampler.get_2D());
+        if(!bsdf) return radiance;
+
+        const auto [f, wo, pdf, is_specular] = *bsdf;
+        const f32 cos = std::abs(dot(n, wo));
         tmp *= f * cos / pdf;
+
         trace_ray = record->new_ray(wo);
+        specular_bounce = is_specular;
     }
     return radiance;
 }

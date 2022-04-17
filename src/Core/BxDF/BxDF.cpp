@@ -1,8 +1,13 @@
 #include <Core/BxDF/BxDF.hpp>
 
-BxDF::BxDF(Type type) : type(type) {}
+BxDF::BxDF(bxdf_type type) : type(type) {}
 
-bool BxDF::is_specular(Type type)
+bool BxDF::is_specular(bxdf_type type)
 {
-    return type & Type::Specular;
+    return static_cast<int>(type) & static_cast<int>(bxdf_type::Specular);
+}
+
+Vector3f BxDF::reflect(const Vector3f& w) const
+{
+    return {-w.x, -w.y, w.z};
 }

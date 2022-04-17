@@ -5,7 +5,7 @@
 #include <Sample.hpp>
 
 Lambertian::Lambertian(const Spectrum& albedo)
-    : BxDF(Type(Type::Diffuse | Type::Reflection)), albedo(albedo) {}
+    : BxDF(bxdf_type(bxdf_type::Diffuse | bxdf_type::Reflection)), albedo(albedo) {}
 
 Spectrum Lambertian::f(const Vector3f& wi, const Vector3f& wo) const
 {
@@ -17,10 +17,9 @@ f32 Lambertian::pdf(const Vector3f& wi, const Vector3f& wo) const
     return Sample::cosine_hemisphere_pdf(wo);
 }
 
-std::tuple<Spectrum, Vector3f, f32>
-Lambertian::sample_f(const Vector3f& wi, const Point2f& p) const
+std::optional<bxdf_sample> Lambertian::sample_f(const Vector3f& wi, const Point2f& p) const
 {
     auto wo = as<Vector3, f32>(Sample::cosine_hemisphere(p));
     // wo.z = std::copysign(wo.z, wi.z);
-    return {f(wi, wo), wo, pdf(wi, wo)}; 
+    return bxdf_sample{f(wi, wo), wo, pdf(wi, wo), type}; 
 }
