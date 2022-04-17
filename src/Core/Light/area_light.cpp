@@ -2,6 +2,7 @@
 
 #include <Core/Shape/Shape.hpp>
 #include <hit_record.hpp>
+#include <global.hpp>
 
 area_light::area_light(const std::shared_ptr<Shape>& shape, const Spectrum& emit)
     : Light(Flags::area)
@@ -9,7 +10,7 @@ area_light::area_light(const std::shared_ptr<Shape>& shape, const Spectrum& emit
 
 Spectrum area_light::Li(const Vector3f& normal, const Vector3f& emit_dir) const
 {
-    return dot(normal, emit_dir) > 0 ? emit : Spectrum{0};
+    return is_same_direction(normal, emit_dir) ? emit : Spectrum{0};
 }
 
 Spectrum area_light::Li(const hit_record& record, const Vector3f& w) const

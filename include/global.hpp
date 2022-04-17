@@ -8,9 +8,15 @@ using namespace Hinae;
 #include <bit>
 
 template <arithmetic T>
+bool is_same_direction(const Vector3<T>& v1, const Vector3<T>& v2)
+{
+    return dot(v1, v2) > 0;
+}
+
+template <arithmetic T>
 Vector3<T> flip_normal(const Vector3<T>& v, const Vector3<T>& n)
 {
-    return dot(n, v) > 0 ? n : -n;
+    return is_same_direction(v, n) ? n : -n;
 }
 // Avoiding Self-Intersection
 struct Offset
