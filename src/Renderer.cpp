@@ -45,7 +45,7 @@ void Renderer::render()
     Timer timer;
     if(thread_count == 0)
     {
-        thread_local Sampler sampler;
+        Sampler sampler;
 
         for(usize y : range(height))
         {
@@ -57,7 +57,7 @@ void Renderer::render()
                     pixel.x += x;
                     pixel.y += y;
                     Ray3f ray = camera.generate_ray(pixel);
-                    return clamp(0.0f, integrator->Li(ray, scene, sampler), 1.0f);
+                    return integrator->Li(ray, scene, sampler);
                 });
                 camera.photo[x][y] = color_space(radiance).to_srgb();
             }
@@ -79,7 +79,7 @@ void Renderer::render()
                     pixel.x += x;
                     pixel.y += y;
                     Ray3f ray = camera.generate_ray(pixel);
-                    return clamp(0.0f, integrator->Li(ray, scene, sampler), 1.0f);
+                    return integrator->Li(ray, scene, sampler);
                 });
                 camera.photo[x][y] = color_space(radiance).to_srgb();
             }

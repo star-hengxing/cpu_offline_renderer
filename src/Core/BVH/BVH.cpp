@@ -82,7 +82,6 @@ void BVH::build(const std::vector<std::shared_ptr<geometry_primitive>>& data)
     Node* root = recursive_build(pool, primitive_info, 0, primitive_info.size(), order_primitive);
 
     primitives.swap(order_primitive);
-
     flat_bvh = std::make_unique<flat_array_node[]>(total_nodes);
     usize index = 0;
     recursive_flat(root, index);
@@ -112,6 +111,7 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
     {
         order_primitive.push_back(primitives[primitive_info[start].index]);
         node->init_leaf(bounds, order_primitive.size() - 1, 1);
+        return node;
     }
     else
     {
@@ -135,15 +135,23 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
                 });
 
             mid = p_mid - &primitive_info[0];
-            if(mid != start && mid != end)
+            if(mid == start || mid == end)
             {
-
+                mid = (start + end) / 2;
+                std::nth_element(&primitive_info[start]
+                    , &primitive_info[mid]
+                    , &primitive_info[end - 1] + 1
+                    , [axis](const Primitive_info& a, const Primitive_info& b)
+                    {
+                        return a.centroid[axis] < b.centroid[axis];
+                    });
             }
 
             Node* left  = recursive_build(pool, primitive_info, start, mid, order_primitive);
             Node* right = recursive_build(pool, primitive_info, mid, end, order_primitive);
 
             node->init_interior(axis, left, right);
+            return node;
         }
         else
         {
