@@ -62,22 +62,16 @@ bool Triangle::intersect(const Ray3f& ray3, hit_record& record) const
     const f32 inv = reciprocal(dot(S1, E1));
 
     const f32 t = dot(S2, E2) * inv;
-    if(t <= 0 || t > INFINITY_<f32>) return false;
 
     f32 beta  = dot(S1, S) * inv;
-    if(beta < 0) return false;
-
     f32 gamma = dot(S2, ray3.direction) * inv;
-    if(gamma < 0) return false;
+
+    if(beta < 0 || beta > 1 || gamma < 0 || (beta + gamma) > 1)
+        return false;
 
     f32 alpha = 1 - beta - gamma;
-    if(alpha < 0) return false;
-
-    bool is_updated = record.set_t(t);
-    
-    if(is_updated) record.p = {alpha, beta, gamma};
-
-    return is_updated;
+    record.p = {alpha, beta, gamma};
+    return record.set_t(t);
 }
 
 void Triangle::get_intersect_record(const Ray3f& ray3, hit_record& record) const
