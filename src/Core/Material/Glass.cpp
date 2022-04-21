@@ -8,6 +8,6 @@ Glass::Glass(f32 eta) : eta(eta) {}
 
 void Glass::compute(hit_record& record) const
 {
-    BxDF* bxdf = BxDF_memory_pool::get().alloc<Dielectric>(eta);
+    BxDF* bxdf = BxDF_memory_pool::get().alloc<Dielectric>(1.0f, eta);
     record.bsdf = BSDF{record, bxdf};
 }
