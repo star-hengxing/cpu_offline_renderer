@@ -1,5 +1,7 @@
 #include <Renderer.hpp>
 
+#include <filesystem>
+
 #include <util/Color/color_space.hpp>
 #include <Core/Sampler/Sampler.hpp>
 #include <util/render_queue.hpp>
@@ -89,5 +91,6 @@ void Renderer::render()
     }
 
     timer.elapsed();
+    std::filesystem::create_directory("images");
     camera.save_photo("images/dev.png");
 }

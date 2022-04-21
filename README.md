@@ -11,7 +11,6 @@
 ```bash
 mkdir cg
 cd cg
-mkdir images
 git clone https://github.com/star-hengxing/Hinae.git
 git clone https://github.com/star-hengxing/cpu_offline_renderer
 cd cpu_offline_renderer
@@ -24,7 +23,7 @@ xmake run main
 可以通过命令行参数传递spp和线程数，默认单线程，spp=4
 
 ```bash
-xmake run <spp> <thread count>
+xmake run main <spp> <thread count>
 xmake run main 1024 4
 ```
 
