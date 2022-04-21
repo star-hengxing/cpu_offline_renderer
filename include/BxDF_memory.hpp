@@ -47,6 +47,6 @@ public:
 #include <Core/BxDF/Lambertian.hpp>
 #include <Core/BxDF/Microfacet.hpp>
 #include <Core/BxDF/Dielectric.hpp>
-#include <Core/BxDF/Specular.hpp>
+#include <Core/BxDF/Conductor.hpp>
 
-using BxDF_memory_pool = memory_pool<Lambertian, Specular, Dielectric, Microfacet>;
+using BxDF_memory_pool = memory_pool<Lambertian, Conductor, Dielectric, Microfacet>;

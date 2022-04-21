@@ -1,14 +1,19 @@
 #pragma once
 
+#include <complex>
+#include <array>
+
 #include "BxDF.hpp"
 
-struct Specular : public BxDF
+struct Conductor : public BxDF
 {
 private:
-    Spectrum R;
+    const std::complex<f32> eta_i;
+    const std::array<f32, 3>& n;
+    const std::array<f32, 3>& k;
 
 public:
-    Specular(const Spectrum& R);
+    Conductor(const std::complex<f32>& eta_i, const std::array<f32, 3>& n, const std::array<f32, 3>& k);
 
     virtual Spectrum f(const Vector3f& wi, const Vector3f& wo) const override;
 
