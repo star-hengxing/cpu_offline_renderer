@@ -3,7 +3,8 @@
 #include <Hinae/Trigonometric.hpp>
 
 trowbridge_reitz::trowbridge_reitz(f32 alpha_x, f32 alpha_y)
-    : alpha_x(alpha_x), alpha_y(alpha_y) {}
+    : alpha_x(alpha_x), alpha_y(alpha_y)
+    , is_smooth_(max(alpha_x, alpha_y) <= 0.001f) {}
 
 f32 trowbridge_reitz::G1(const Vector3f& w) const
 {
@@ -15,9 +16,9 @@ f32 trowbridge_reitz::G(const Vector3f& wi, const Vector3f& wo) const
     return 1 / (1 + lambda(wi) + lambda(wo));
 }
 
-f32 trowbridge_reitz::PDF(const Vector3f& wi, const Vector3f& wh) const
+f32 trowbridge_reitz::pdf(const Vector3f& wi, const Vector3f& wh) const
 {
-    return D(wh) * G1(wi) * std::abs(dot(wi, wh)) * Local::abs_cos_theta(wi);
+    return D(wi, wh);
 }
 
 f32 trowbridge_reitz::D(const Vector3f& w, const Vector3f& wm) const
@@ -66,4 +67,9 @@ Vector3f trowbridge_reitz::sample_wm(const Vector3f& w, const Point2f& p) const
     const f32 vx = std::sqrt(max(0.0f, 1 - v.norm2()));
     const Vector3f n = v.x * T1 + v.y * T2 + vx * wh;
     return Vector3f(alpha_x * n.x, alpha_y * n.y, max(0.0f, n.z)).normalized();
+}
+
+bool trowbridge_reitz::is_smooth() const
+{
+    return is_smooth_;
 }

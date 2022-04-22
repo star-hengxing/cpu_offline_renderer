@@ -10,6 +10,7 @@ struct trowbridge_reitz
 {
 private:
     const f32 alpha_x, alpha_y;
+    const bool is_smooth_;
 
 public:
     trowbridge_reitz(f32 alpha_x, f32 alpha_y);
@@ -26,5 +27,7 @@ public:
 
     Vector3f sample_wm(const Vector3f& w, const Point2f& p) const;
 
-    f32 PDF(const Vector3f& wi, const Vector3f& wh) const;
+    f32 pdf(const Vector3f& wi, const Vector3f& wh) const;
+    
+    bool is_smooth() const;
 };
