@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Material.hpp"
-
 #include <memory>
 
-#include <Core/Texture/Texture.hpp>
-
 #include <Hinae/Vector3.hpp>
+
+#include <Core/Texture/Texture.hpp>
+#include "Material.hpp"
 
 using Spectrum = Hinae::Vector3f;
 

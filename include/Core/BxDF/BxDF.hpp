@@ -43,6 +43,8 @@ public:
 protected:
     Vector3f reflect(const Vector3f& w) const;
 
+    bool is_same_hemisphere(const Vector3f& wi, const Vector3f& wo) const;
+
 public:
     BxDF(bxdf_type type);
 

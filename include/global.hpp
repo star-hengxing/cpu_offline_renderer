@@ -18,6 +18,13 @@ Vector3<T> flip_normal(const Vector3<T>& v, const Vector3<T>& n)
 {
     return is_same_direction(v, n) ? n : -n;
 }
+
+template <arithmetic T>
+bool is_zero(const Vector3<T>& v)
+{
+    const auto [x, y, z] = Hinae::abs(v);
+    return (x + y + z) == ZERO<T>;
+}
 // Avoiding Self-Intersection
 struct Offset
 {

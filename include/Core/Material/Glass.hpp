@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Material.hpp"
-
 #include <Hinae/basic_type.hpp>
+
+#include "Material.hpp"
 
 using namespace Hinae;
 

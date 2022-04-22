@@ -3,6 +3,8 @@
 #include <Hinae/Trigonometric.hpp>
 #include <Hinae/physics.hpp>
 
+#include <global.hpp>
+
 Microfacet::Microfacet(const Spectrum& R, f32 alpha_x, f32 alpha_y, f32 eta)
     : BxDF(bxdf_type(bxdf_type::Reflection | bxdf_type::Glossy))
     , R(R), distribution(alpha_x, alpha_y), eta(eta) {}
@@ -12,7 +14,7 @@ Spectrum Microfacet::f(const Vector3f& wi, const Vector3f& wo) const
     f32 cos_i = Local::abs_cos_theta(wi);
     f32 cos_o = Local::abs_cos_theta(wo);
     Vector3f wh = wi + wo;
-    if(is_zero(cos_i) || is_zero(cos_o) || is_zero(wh.norm2()))
+    if(is_zero(cos_i) || is_zero(cos_o) || is_zero(wh))
         return {0};
 
     wh.normalize();
@@ -26,13 +28,13 @@ Spectrum Microfacet::f(const Vector3f& wi, const Vector3f& wo) const
 f32 Microfacet::pdf(const Vector3f& wi, const Vector3f& wo) const
 {
     Vector3f wh = (wi + wo).normalized();
-    return distribution.PDF(wi, wh) / (4 * dot(wi, wh));
+    return distribution.pdf(wi, wh) / (4 * dot(wi, wh));
 }
 
 std::optional<bxdf_sample> Microfacet::sample_f(const Vector3f& wi, const Point2f& p) const
 {
     Vector3f wh = distribution.sample_wm(wi, p);
-    if(wi.z * wh.z < 0) wh = -wh;
+    if(is_same_hemisphere(wi, wh)) wh = -wh;
     Vector3f wo = Hinae::reflect(-wi, wh);
-    return bxdf_sample{f(wi, wo), wo, distribution.PDF(wi, wh) / (4 * dot(wi, wh)), type};
+    return bxdf_sample{f(wi, wo), wo, distribution.pdf(wi, wh) / (4 * dot(wi, wh)), type};
 }

@@ -11,3 +11,8 @@ Vector3f BxDF::reflect(const Vector3f& w) const
 {
     return {-w.x, -w.y, w.z};
 }
+
+bool BxDF::is_same_hemisphere(const Vector3f& wi, const Vector3f& wo) const
+{
+    return wi.z * wo.z < 0;
+}

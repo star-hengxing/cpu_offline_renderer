@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Material.hpp"
-
 #include <Hinae/basic_type.hpp>
 #include <Hinae/Vector3.hpp>
+
+#include "Material.hpp"
 
 using namespace Hinae;
 using Spectrum = Vector3f;
