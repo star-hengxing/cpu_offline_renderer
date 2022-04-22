@@ -34,7 +34,7 @@ f32 Microfacet::pdf(const Vector3f& wi, const Vector3f& wo) const
 std::optional<bxdf_sample> Microfacet::sample_f(const Vector3f& wi, const Point2f& p) const
 {
     Vector3f wh = distribution.sample_wm(wi, p);
-    if(is_same_hemisphere(wi, wh)) wh = -wh;
+    if(!is_same_hemisphere(wi, wh)) wh = -wh;
     Vector3f wo = Hinae::reflect(-wi, wh);
     return bxdf_sample{f(wi, wo), wo, distribution.pdf(wi, wh) / (4 * dot(wi, wh)), type};
 }

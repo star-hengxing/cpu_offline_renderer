@@ -70,8 +70,11 @@ bool Triangle::intersect(const Ray3f& ray3, hit_record& record) const
         return false;
 
     f32 alpha = 1 - beta - gamma;
-    record.p = {alpha, beta, gamma};
-    return record.set_t(t);
+
+    bool is_updated = record.set_t(t);
+    if(is_updated) record.p = {alpha, beta, gamma};
+    
+    return is_updated;
 }
 
 void Triangle::get_intersect_record(const Ray3f& ray3, hit_record& record) const

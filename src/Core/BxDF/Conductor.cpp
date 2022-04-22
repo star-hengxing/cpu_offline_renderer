@@ -26,7 +26,7 @@ static Spectrum fresnel(f32 cos, std::complex<f32> eta_i,
 
 Spectrum Conductor::f(const Vector3f& wi, const Vector3f& wo) const
 {
-    if(GGX.is_smooth() || is_same_hemisphere(wi, wo)) return 0;
+    if(GGX.is_smooth() || !is_same_hemisphere(wi, wo)) return 0;
 
     f32 cos_i = Local::abs_cos_theta(wi);
     f32 cos_o = Local::abs_cos_theta(wo);
@@ -46,7 +46,7 @@ Spectrum Conductor::f(const Vector3f& wi, const Vector3f& wo) const
 
 f32 Conductor::pdf(const Vector3f& wi, const Vector3f& wo) const
 {
-    if(GGX.is_smooth() || is_same_hemisphere(wi, wo)) return 0;
+    if(GGX.is_smooth() || !is_same_hemisphere(wi, wo)) return 0;
 
     Vector3f wh = wi + wo;
     if(is_zero(wh)) return 0;
@@ -75,7 +75,7 @@ std::optional<bxdf_sample> Conductor::sample_f(const Vector3f& wi, const Point2f
         const Vector3f wh = GGX.sample_wm(wi, p);
         const Vector3f wo = Hinae::reflect(-wi, wh);
 
-        if(is_same_hemisphere(wi, wo)) return {};
+        if(!is_same_hemisphere(wi, wo)) return {};
 
         const f32 pdf = GGX.pdf(wi, wh) / (4 * std::abs(dot(wi ,wh)));
         
