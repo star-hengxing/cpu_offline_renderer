@@ -2,6 +2,7 @@
 
 #include <Hinae/basic_type.hpp>
 
+#include <Core/BxDF/microfacet_distribution/trowbridge_reitz.hpp>
 #include "Material.hpp"
 
 using namespace Hinae;
@@ -9,10 +10,11 @@ using namespace Hinae;
 struct Glass : public Material
 {
 private:
+    const trowbridge_reitz GGX;
     const f32 eta;
     
 public:
-    Glass(f32 eta);
+    Glass(f32 alpha_x, f32 alpha_y, f32 eta);
 
     virtual void compute(hit_record& record) const;
 };
