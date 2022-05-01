@@ -181,11 +181,11 @@ std::shared_ptr<geometry_primitive> BVH::recursive_intersect(const Ray3f& ray
         {
             if(node->primitive_count > 0)
             {
-                for(usize i : range(node->primitive_first, 
-                    node->primitive_first + node->primitive_count))
+                const auto end = node->primitive_first + node->primitive_count;
+                for(usize i : range(node->primitive_first, end))
                 {
-                    bool is_updated = primitives[i]->intersect(ray, record);
-                    if(is_updated) primitive = primitives[i];
+                    if(primitives[i]->intersect(ray, record))
+                        primitive = primitives[i];
                 }
                 if(stack.empty()) break;
                 current = stack.pop();

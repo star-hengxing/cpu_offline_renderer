@@ -19,9 +19,7 @@ BSDF::BSDF(const hit_record& record, BxDF* bxdf)
 {
     this->bxdf = bxdf;
     this->n = record.n;
-    const auto [t, b] = local_coordinate_system(n);
-    this->t = t;
-    this->b = b;
+    std::tie(t, b) = local_coordinate_system(n);
 }
 
 Spectrum BSDF::f(const Vector3f& wi, const Vector3f& wo) const

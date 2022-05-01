@@ -28,8 +28,8 @@ Spectrum Conductor::f(const Vector3f& wi, const Vector3f& wo) const
 {
     if(GGX.is_smooth() || !is_same_hemisphere(wi, wo)) return 0;
 
-    f32 cos_i = Local::abs_cos_theta(wi);
-    f32 cos_o = Local::abs_cos_theta(wo);
+    const f32 cos_i = Local::abs_cos_theta(wi);
+    const f32 cos_o = Local::abs_cos_theta(wo);
     Vector3f wh = wi + wo;
     if(is_zero(cos_i) || is_zero(cos_o) || is_zero(wh))
         return 0;
@@ -66,7 +66,7 @@ std::optional<bxdf_sample> Conductor::sample_f(const Vector3f& wi, const Point2f
         const f32 inv_cos_o = reciprocal(Local::abs_cos_theta(wo));
 
         const Spectrum f = fresnel(cos_i, eta_i, n, k) * inv_cos_o;
-        return bxdf_sample{f, wo, pdf, bxdf_type::Specular};
+        return bxdf_sample{f, wo, pdf, bxdf_type::Specular | bxdf_type::Reflection};
     }
     else
     {
@@ -90,6 +90,6 @@ std::optional<bxdf_sample> Conductor::sample_f(const Vector3f& wi, const Point2f
         const f32 G = GGX.G(wi, wo);
 
         const Spectrum f = D * G * F / (4 * cos_i * cos_o);
-        return bxdf_sample{f, wo, pdf, bxdf_type::Glossy};
+        return bxdf_sample{f, wo, pdf, bxdf_type::Glossy | bxdf_type::Reflection};
     }
 }
