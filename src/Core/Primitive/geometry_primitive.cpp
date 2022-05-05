@@ -12,8 +12,9 @@ geometry_primitive::geometry_primitive(
 
 bool geometry_primitive::intersect(const Ray3f& ray3, hit_record& record) const
 {
+    if(!shape->intersect(ray3, record)) return false;
     if(light) record.light = light;
-    return shape->intersect(ray3, record);
+    return true;
 }
 
 Bounds3f geometry_primitive::world_bound() const
