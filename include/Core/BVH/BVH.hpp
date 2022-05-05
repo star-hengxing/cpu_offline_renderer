@@ -40,6 +40,8 @@ public:
     }
 };
 
+static constexpr isize without_intersect = -1;
+
 struct BVH
 {
     enum class split_method { native };
@@ -97,7 +99,7 @@ private:
         , usize start, usize end
         , std::vector<std::shared_ptr<geometry_primitive>>& order_primitive);
 
-    std::shared_ptr<geometry_primitive> recursive_intersect(const Ray3f& ray
+    isize recursive_intersect(const Ray3f& ray
         , hit_record& record
         , const Vector3f& inv_dir
         , const std::array<bool, 3> dir_is_negative) const;

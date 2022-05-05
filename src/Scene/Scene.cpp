@@ -108,23 +108,24 @@ Scene& Scene::build()
 std::optional<hit_record> Scene::intersect(const Ray3f &ray) const
 {
     hit_record record;
-    std::shared_ptr<geometry_primitive> primitive;
+    isize index = without_intersect;
 
-    for(const auto& v : primitives)
+    for(const auto& [i, v] : enumerate(primitives))
     {
         if(v->intersect(ray, record))
-            primitive = v;
+            index = i;
     }
 
-    if(!primitive) return {};
-    primitive->get_intersect_record(ray, record);
-    primitive->compute_BxDF(record);
-    return std::make_optional(record);
+    if(index == without_intersect) return {};
+    primitives[index]->get_intersect_record(ray, record);
+    primitives[index]->compute_BxDF(record);
+    return record;
 }
 
-bool Scene::intersect_p(const Ray3f& shadow_ray) const
+bool Scene::intersect_p(const Ray3f& shadow_ray, f32 t_max) const
 {
     hit_record record;
+    record.t_max = t_max;
     for(const auto& primitive : primitives)
     {
         if(primitive->intersect(shadow_ray, record))

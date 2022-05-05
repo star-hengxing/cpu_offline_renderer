@@ -166,14 +166,37 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
     return node;
 }
 
-std::shared_ptr<geometry_primitive> BVH::recursive_intersect(const Ray3f& ray
+usize BVH::recursive_flat(Node* node, usize& index)
+{
+    flat_array_node* array_node = &flat_bvh[index];
+    array_node->bounds = node->bounds;
+
+    usize next = index;
+    index++;
+
+    if(node->primitive_count > 0)
+    {
+        array_node->primitive_first = node->primitive_first;
+        array_node->primitive_count = node->primitive_count;
+    }
+    else
+    {
+        array_node->axis = node->axis;
+        array_node->primitive_count = 0;
+        recursive_flat(node->left, index);
+        array_node->right_index = recursive_flat(node->right, index);
+    }
+    return next;
+}
+
+isize BVH::recursive_intersect(const Ray3f& ray
         , hit_record& record
         , const Vector3f& inv_dir
         , const std::array<bool, 3> dir_is_negative) const
 {
     usize current = 0;
     Stack<usize> stack;
-    std::shared_ptr<geometry_primitive> primitive;
+    isize index = without_intersect;
     while(true)
     {
         const flat_array_node* node = &flat_bvh[current];
@@ -185,7 +208,7 @@ std::shared_ptr<geometry_primitive> BVH::recursive_intersect(const Ray3f& ray
                 for(usize i : range(node->primitive_first, end))
                 {
                     if(primitives[i]->intersect(ray, record))
-                        primitive = primitives[i];
+                        index = i;
                 }
                 if(stack.empty()) break;
                 current = stack.pop();
@@ -210,30 +233,7 @@ std::shared_ptr<geometry_primitive> BVH::recursive_intersect(const Ray3f& ray
             current = stack.pop();
         }
     }
-    return primitive;
-}
-
-usize BVH::recursive_flat(Node* node, usize& index)
-{
-    flat_array_node* array_node = &flat_bvh[index];
-    array_node->bounds = node->bounds;
-
-    usize next = index;
-    index++;
-
-    if(node->primitive_count > 0)
-    {
-        array_node->primitive_first = node->primitive_first;
-        array_node->primitive_count = node->primitive_count;
-    }
-    else
-    {
-        array_node->axis = node->axis;
-        array_node->primitive_count = 0;
-        recursive_flat(node->left, index);
-        array_node->right_index = recursive_flat(node->right, index);
-    }
-    return next;
+    return index;
 }
 
 std::optional<hit_record> BVH::intersect(const Ray3f& ray) const
@@ -243,11 +243,11 @@ std::optional<hit_record> BVH::intersect(const Ray3f& ray) const
     const Vector3f inv_dir{1 / x, 1 / y, 1 / z};
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
 
-    const auto primitive = recursive_intersect(ray, record, inv_dir, dir_is_negative);
-    if(!primitive) return {};
+    const auto index = recursive_intersect(ray, record, inv_dir, dir_is_negative);
+    if(index == without_intersect) return {};
 
-    primitive->get_intersect_record(ray, record);
-    primitive->compute_BxDF(record);
+    primitives[index]->get_intersect_record(ray, record);
+    primitives[index]->compute_BxDF(record);
     return record;
 }
 
@@ -258,6 +258,6 @@ std::optional<hit_record> BVH::intersect_p(const Ray3f& shadow_ray, f32 t_max) c
     const auto [x, y, z] = shadow_ray.direction;
     const Vector3f inv_dir{1 / x, 1 / y, 1 / z};
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
-    const auto primitive = recursive_intersect(shadow_ray, record, inv_dir, dir_is_negative);
-    return primitive ? std::make_optional(record) : std::nullopt;
+    const auto index = recursive_intersect(shadow_ray, record, inv_dir, dir_is_negative);
+    return (index != without_intersect) ? std::make_optional(record) : std::nullopt;
 }
