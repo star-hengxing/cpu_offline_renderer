@@ -2,22 +2,22 @@
 
 #include "Shape.hpp"
 
-struct Cone : public Shape
+struct Annulus : public Shape
 {
 private:
-    static constexpr f32 min_height = 0;
-
-    const f32 radius;
-    const f32 max_height;
+    static constexpr auto local_y = ZERO<f32>;
+    const f32 major_radius, minor_radius;
     const f32 max_angle;
 
-    Vector3f get_normal(f32 x, f32 z) const;
+    Vector3f get_local_normal() const;
 
-    Point2f get_uv(f32 phi, f32 y) const;
+    Vector3f get_world_normal() const;
+
+    Point2f get_uv(f32 phi, f32 radius) const;
 
 public:
-    Cone(const Matrix4f& local_to_world, const Matrix4f& world_to_local
-        , f32 radius, f32 max_height, f32 max_angle);
+    Annulus(const Matrix4f& local_to_world, const Matrix4f& world_to_local
+        , f32 major_radius, f32 minor_radius, f32 max_angle);
 
     virtual Bounds3f world_bound() const override;
 

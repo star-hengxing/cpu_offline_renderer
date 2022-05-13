@@ -2,22 +2,16 @@
 
 #include "Shape.hpp"
 
-struct Cone : public Shape
+struct Cuboid : public Shape
 {
 private:
-    static constexpr f32 min_height = 0;
+    f32 length, width, height;
 
-    const f32 radius;
-    const f32 max_height;
-    const f32 max_angle;
-
-    Vector3f get_normal(f32 x, f32 z) const;
-
-    Point2f get_uv(f32 phi, f32 y) const;
+    Vector3f get_normal(const Point3f& p) const;
 
 public:
-    Cone(const Matrix4f& local_to_world, const Matrix4f& world_to_local
-        , f32 radius, f32 max_height, f32 max_angle);
+    Cuboid(const Matrix4f& local_to_world, const Matrix4f& world_to_local
+        , f32 length, f32 width, f32 height);
 
     virtual Bounds3f world_bound() const override;
 

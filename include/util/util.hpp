@@ -197,6 +197,16 @@ void map(const Container1& src, Container2& dst, Function f)
 	// std::ranges::copy(std::views::transform(src, f), dst.begin());
 }
 
+[[noreturn]] inline void unimplemented(const std::source_location location = std::source_location::current())
+{
+    std::cout << '\n'
+              << '['  << location.file_name()
+              << ':'  << location.line()
+              << "] " << location.function_name()
+              << " unimplemented!\n";
+    exit(-1);
+}
+
 template <typename... Args>
 void println(const Args&... args)
 {

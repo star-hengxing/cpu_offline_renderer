@@ -4,14 +4,29 @@
 #include <Hinae/equation.hpp>
 
 #include <hit_record.hpp>
+#include <global.hpp>
 
 Cylinder::Cylinder(const Matrix4f& local_to_world, const Matrix4f& world_to_local
-    , f32 height, f32 radius, f32 max_angle
-    , max_shape cylinder_shape)
+    , f32 radius, f32 max_height, f32 max_angle, max_shape cylinder_shape)
     : Shape(local_to_world, world_to_local)
-    , height(height)
-    , radius(radius), max_angle(max_angle)
+    , radius(radius), max_height(max_height)
+    , max_angle(to_radian(max_angle))
     , cylinder_shape(cylinder_shape) {}
+
+Vector3f Cylinder::get_normal(f32 x, f32 z) const
+{
+    const auto inv = reciprocal(radius);
+    return {x * inv, 0, z * inv};
+}
+
+Point2f Cylinder::get_uv(f32 phi, f32 y) const
+{
+    return
+    {
+        phi / max_angle,
+        y / max_height // (y - min_height) / (max_height - min_height)
+    };
+}
 
 Bounds3f Cylinder::world_bound() const 
 {
@@ -22,91 +37,130 @@ Bounds3f Cylinder::local_bound() const
 {
     return
     {
-        {-radius, 0, -radius},
-        { radius, height, radius}
+        {-radius, min_height, -radius},
+        { radius, max_height, radius}
     };
+}
+
+bool Cylinder::surface_intersect(const Ray3f& ray, hit_record& record, f32 cap_t) const
+{
+    const auto [ox, oy, oz] = ray.origin;
+    const auto [dx, dy, dz] = ray.direction;
+
+    const auto a = dx * dx + dz * dz;
+    const auto b = 2 * (ox * dx + oz * dz);
+    const auto c = ox * ox + oz * oz - radius * radius;
+
+    const auto result = quadratic(a, b, c);
+    if(!result) return false;
+
+    auto [x1, x2] = result.value();
+    if(x1 > x2) std::swap(x1, x2);
+
+    // if surface not closed, should flip normal which inside the curve
+    auto inside = false;
+    // TODO: clean code
+    Point3f p;
+    auto t = x1;
+    p = ray.at(t);
+    auto phi = std::atan2(p.z, p.x);
+    if(phi < 0) phi += 2 * PI<f32>;
+    if(p.y < min_height || p.y > max_height || phi > max_angle)
+    {
+        t = x2;
+        p = ray.at(t);
+        phi = std::atan2(p.z, p.x);
+        if(phi < 0) phi += 2 * PI<f32>;
+        if(p.y < min_height || p.y > max_height || phi > max_angle)
+            return false;
+        else
+            inside = true;
+    }
+
+    if(t >= cap_t) return false;
+
+    const auto updated = record.set_t(t);
+    if(updated)
+    {
+        record.n = get_normal(p.x, p.z);
+        if(inside) record.n = -record.n;
+        record.uv = get_uv(phi, p.y);
+    }
+    return updated;
+}
+
+bool Cylinder::check_cap(const Ray3f& ray, f32 t) const
+{
+    const auto x = ray.at<Axis::X>(t);
+    const auto z = ray.at<Axis::Z>(t);
+    return (x * x + z * z) <= radius * radius;
+}
+
+std::tuple<f32, f32> Cylinder::cap_intersect(const Ray3f& ray) const
+{
+    auto t = INFINITY_<f32>;
+    f32 n;
+    const auto intersect = [&](f32 cap_t, f32 y)
+    {
+        if(cap_t >= t || cap_t <= 0 || !check_cap(ray, cap_t))
+            return;
+
+        t = cap_t;
+        // if surface not closed, the cap will be seen
+        if(is_same_direction(Vector3f{0, y, 0}, ray.direction))
+            y = -y;
+
+        n = y;
+    };
+
+    if(cylinder_shape & cylinder_top)
+        intersect(ray.inv_at<Axis::Y>(max_height), 1);
+
+    if(cylinder_shape & cylinder_bottom)
+        intersect(ray.inv_at<Axis::Y>(min_height), -1);
+
+    return {t, n};
 }
 
 bool Cylinder::intersect(const Ray3f& ray3, hit_record& record) const 
 {
     const auto ray = world_to_local * ray3;
-    f32 a, b, c;
-    const auto [ox, oy, oz] = ray.origin;
-    const auto [dx, dy, dz] = ray.direction;
+    if(!cylinder_shape)
+        return surface_intersect(ray, record, INFINITY_<f32>);
 
-    a = dx * dx + dz * dz;
-    b = 2 * (ox * dx + oz * dz);
-    c = ox * ox + oz * oz - radius * radius;
+    const auto [t, n] = cap_intersect(ray);
+    if(surface_intersect(ray, record, t)) return true;
 
-    const auto result = quadratic(a, b, c);
-    if(!result) return false;
-
-    const auto [x1, x2] = result.value();
-
-    f32 y, t = INFINITY_<f32>;
-    y = ray.at<Axis::Y>(x1);
-    if(y > 0 && y < height)
-        t = x1;
-
-    y = ray.at<Axis::Y>(x2);
-    if(y > 0 && y < height)
-        t = min(t, x2);
-
-    if(cylinder_shape)
-    {
-        std::optional<f32> is_cap = check_cap(ray);
-        if(is_cap) return record.set_t(is_cap.value());
-    }
-
-    const f32 x = ray.at<Axis::X>(t);
-    const f32 z = ray.at<Axis::Z>(t);
-    const f32 angle = std::abs(std::atan2(z, x));
-    if(angle > max_angle) return false;
-
-    return record.set_t(t);
+    const auto updated = record.set_t(t);
+    if(updated) record.n = {0, n, 0};
+    return updated;
 }
 
 void Cylinder::get_intersect_record(const Ray3f& ray3, hit_record& record) const
 {
     record.p = ray3.at(record.t_min);
-    const auto [x, y, z] = world_to_local * record.p;
-    Vector3f normal{0, 0, 0};
-    // TODO： 求交时候添加记录，这样求cap的法线能更robust
-    if(y >= height - 0.001f)
-        normal.y = 1;
-    else if(y <= 0.001f)
-        normal.y = -1;
-    else
-        normal = Vector3f{x, y, z}.normalized();
-    record.n = local_to_world * normal;
+    record.n = local_to_world * record.n;
 }
 
-bool Cylinder::check_cap(const Ray3f& ray, f32 t) const
+f32 Cylinder::area() const
 {
-    const f32 x = ray.at<Axis::X>(t);
-    const f32 z = ray.at<Axis::Z>(t);
-    return (x * x + z * z) <= radius * radius;
+    return PI<f32> * 2 * radius * max_height;
 }
 
-std::optional<f32> Cylinder::check_cap(const Ray3f& ray) const
+std::tuple<Point3f, Vector3f, f32> Cylinder::sample(const Point2f& random) const
 {
-    std::optional<f32> t;
-    
-    if(cylinder_shape & cylinder_top)
+    const auto y = lerp(min_height, max_height, random.x);
+    const auto theta  = random.y * max_angle;
+    const auto [x, z] = Point2{radius * std::cos(theta), radius * std::sin(theta)};
+    return
     {
-        const f32 top_cap_t = ray.inv_at<Axis::Y>(height);
-        if(check_cap(ray, top_cap_t))
-            t = top_cap_t;
-    }
+        local_to_world * Point3{x, y, z},
+        local_to_world * get_normal(x, z),
+        pdf()
+    };
+}
 
-    if(cylinder_shape & cylinder_bottom)
-    {
-        const f32 bottom_cap_t = -ray.origin.y / ray.direction.y;
-        if(check_cap(ray, bottom_cap_t))
-        {
-            t = t.has_value() ? min(bottom_cap_t, t.value()) : bottom_cap_t;
-        }
-    }
-
-    return t;
+f32 Cylinder::pdf() const
+{
+    return 1 / area();
 }

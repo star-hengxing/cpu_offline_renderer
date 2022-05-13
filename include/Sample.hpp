@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Hinae/Trigonometric.hpp>
 #include <Hinae/Vector3.hpp>
 #include <Hinae/Vector2.hpp>
 #include <Hinae/Point3.hpp>
@@ -12,28 +13,32 @@ NAMESPACE_BEGIN(Sample)
 template <arithmetic T>
 Point2<T> uniform_disk(const Point2<T>& p)
 {
-    const T radius = p.x;
-    const T theta  = p.y * 2 * PI<T>;
+    const auto radius = std::sqrt(p.x);
+    const auto theta  = p.y * 2 * PI<T>;
     return {radius * std::cos(theta), radius * std::sin(theta)};
 }
 
 template <arithmetic T>
 T uniform_disk_pdf(const Vector2<T>& v)
 {
-    // x^2 + y^2 <= 1
-    return v.norm() <= ZERO<T> ? INV_PI<T> : ZERO<T>;
+    return INV_PI<T>;
 }
 
 template <arithmetic T>
-Point2<T> uniform_sphere(const Point2<T>& p)
+Point3<T> uniform_sphere(const Point2<T>& p)
 {
-    const T radius = p.x;
-    const T theta  = p.y * 2 * PI<T>;
-    return {radius * std::cos(theta), radius * std::sin(theta)};
+    const auto theta = 2 * PI<T> * p.x;
+    const auto phi = std::acos((1 - 2 * p.y));
+    return
+    {
+        std::sin(phi) * std::cos(theta),
+        std::sin(phi) * std::sin(theta),
+        std::cos(phi)
+    };
 }
 
 template <arithmetic T>
-T uniform_uniform_sphere_pdf()
+T uniform_sphere_pdf()
 {
     return INV_4PI<T>;
 }
@@ -41,39 +46,41 @@ T uniform_uniform_sphere_pdf()
 template <arithmetic T>
 Point3<T> uniform_hemisphere(const Point2<T>& p)
 {
-    const T phi   = p.x * 2 * PI<T>;
-    const T theta = std::acos(1 - p.y);
-    return 
+    const auto phi = 2 * PI<T> * p.x;
+    const auto cos_theta = p.y;
+    const auto sin_theta = cos_to_sin(cos_theta);
+    return
     {
-        std::sin(theta) * std::cos(phi),
-        std::sin(theta) * std::sin(phi),
-        std::cos(theta)
+        sin_theta * std::cos(phi),
+        sin_theta * std::sin(phi),
+        cos_theta
     };
 }
 
 template <arithmetic T>
-T uniform_hemisphere_pdf(const Vector3<T>& v)
+T uniform_hemisphere_pdf()
 {
-    return v.z < ZERO<T> ? ZERO<T> : INV_2PI<T>;
+    return INV_2PI<T>;
 }
 
 template <arithmetic T>
 Point3<T> cosine_hemisphere(const Point2<T>& p)
 {
-    const auto [x, y] = p;
-    const T theta  = y * 2 * PI<T>;
+    const auto phi = 2 * PI<T> * p.x;
+    const auto cos_theta = std::sqrt(p.y);
+    const auto sin_theta = cos_to_sin(cos_theta);
     return
     {
-        std::cos(theta) * std::sqrt(x),
-        std::sin(theta) * std::sqrt(x),
-        std::sqrt(ONE<T> - x)
+        sin_theta * std::cos(phi),
+        sin_theta * std::sin(phi),
+        cos_theta
     };
 }
 
 template <arithmetic T>
 T cosine_hemisphere_pdf(const Vector3<T>& v)
 {
-    return v.z < ZERO<T> ? ZERO<T> : v.z * INV_PI<T>;
+    return Local::cos_theta(v) * INV_PI<T>;
 }
 
 template <arithmetic T>
