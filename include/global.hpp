@@ -1,11 +1,11 @@
 #pragma once
 
+#include <bit>
+
 #include <Hinae/Vector3.hpp>
 #include <Hinae/Point3.hpp>
 
 using namespace Hinae;
-
-#include <bit>
 
 template <arithmetic T>
 bool is_same_direction(const Vector3<T>& v1, const Vector3<T>& v2)

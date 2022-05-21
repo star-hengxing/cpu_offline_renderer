@@ -28,18 +28,26 @@ f32 trowbridge_reitz::D(const Vector3f& w, const Vector3f& wm) const
 
 f32 trowbridge_reitz::D(const Vector3f& w) const
 {
-    const f32 tan2 = Local::tan2_theta(w);
-    if(std::isinf(tan2)) return 0;
-    const f32 cos4 = pow4(Local::cos_theta(w));
-    const f32 e = tan2 * (pow2(Local::cos2_phi(w) / alpha_x) + pow2(Local::sin2_phi(w) / alpha_y));
-    return 1 / (PI<f32> * alpha_x * alpha_y * cos4 * pow2(1 + e));
+    if(alpha_x == alpha_y)
+    {
+        const f32 alpha2 = pow2(alpha_x);
+        return alpha2 / (PI<f32> * pow2((alpha2 - 1) * Local::cos2_theta(w) + 1));
+    }
+    else
+    {
+        const f32 tan2 = Local::tan2_theta(w);
+        if(std::isinf(tan2)) return 0;
+        const f32 cos4 = pow4(Local::cos_theta(w));
+        const f32 e = tan2 * (pow2(Local::cos2_phi(w) / alpha_x) + pow2(Local::sin2_phi(w) / alpha_y));
+        return 1 / (PI<f32> * alpha_x * alpha_y * cos4 * pow2(1 + e));
+    }
 }
 
 f32 trowbridge_reitz::lambda(const Vector3f& w) const
 {
     const f32 tan2 = std::abs(Local::tan2_theta(w));
     if(std::isinf(tan2)) return 0;
-    const f32 alpha2 = pow2(Local::cos2_phi(w) * alpha_x) + pow2(Local::sin2_phi(w) * alpha_y);
+    const f32 alpha2 = (alpha_x == alpha_y ? pow2(alpha_x) : pow2(Local::cos2_phi(w) * alpha_x) + pow2(Local::sin2_phi(w) * alpha_y));
     return (-1 + std::sqrt(1 + alpha2 * tan2)) / 2;
 }
 

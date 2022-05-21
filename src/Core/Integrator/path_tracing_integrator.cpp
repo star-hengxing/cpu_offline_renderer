@@ -1,10 +1,11 @@
 #include <Core/Integrator/path_tracing_integrator.hpp>
+#include <Core/Integrator/direct_light_integrator.hpp>
 
 #include <Core/Sampler/Sampler.hpp>
 #include <Core/Light/Light.hpp>
-#include <Core/BxDF/BxDF.hpp>
 #include <Scene/Scene.hpp>
 #include <hit_record.hpp>
+#include <Core/BSDF.hpp>
 
 Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampler& sampler) const
 {
@@ -19,9 +20,8 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         if(!record) return radiance;
 
         const Vector3f n  = record->n;
-        const Point3f  p  = record->p;
         const Vector3f wi = -trace_ray.direction;
-        
+
         if(record->is_light())
         {
             if(bounce == 0 || specular_bounce)
@@ -31,22 +31,8 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
             return radiance;
         }
         // direct radiance
-        for(const auto& light : scene.lights)
-        {
-            const std::optional<light_sample> payload = light->sample_li(p, sampler.get_2D());
-            if(!payload) continue;
-
-            const auto [wl, light_n, t, pdf, Li] = *payload;
-
-            const Ray3f shadow_ray = record->new_ray(wl);
-            if(scene.bvh_intersect_p(shadow_ray, t - 0.001f)) continue;
-
-            const Spectrum f = record->bsdf.f(wi, wl);
-            const f32 cos = max(0.0f, dot(n, wl));
-
-            const Spectrum direct = Li * f * cos / pdf;
-            radiance += direct * tmp;
-        }
+        const Spectrum direct = direct_light_integrator::sample(ray, scene, record.value(), sampler);
+        radiance += direct * tmp;
         // indirect radiance
         std::optional<bsdf_sample> bsdf = record->bsdf.sample_f(wi, sampler.get_2D());
         if(!bsdf) return radiance;
@@ -58,5 +44,4 @@ Spectrum path_tracing_integrator::Li(const Ray3f& ray, const Scene& scene, Sampl
         trace_ray = record->new_ray(wo);
         specular_bounce = is_specular;
     }
-    return radiance;
 }
