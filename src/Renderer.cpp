@@ -5,7 +5,6 @@
 #include <util/Color/color_space.hpp>
 #include <Core/Sampler/Sampler.hpp>
 #include <util/render_queue.hpp>
-#include <make_scene.hpp>
 #include <util/util.hpp>
 
 static void bar(f64 f)
@@ -18,10 +17,10 @@ Renderer::Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<I
 
 using namespace std::literals;
 
-usize spp = 4;
-usize thread_count = 0;
+static usize spp = 4;
+static usize thread_count = 0;
 
-Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
+Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[], return_type (*fn)())
 {
     if(argc >= 2)
     {
@@ -30,7 +29,7 @@ Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[])
             thread_count = std::atoi(argv[2]);
     }
 
-    auto [scene, camera, integrator] = parse();
+    auto [scene, camera, integrator] = (fn == nullptr ? native() : cornell_box());
 
     println("BVH build...");
     Timer::elapsed(&scene, &Scene::build);
@@ -44,25 +43,29 @@ void Renderer::render()
     const auto [width, height] = camera.photo.get_width_height();
     println("rendering...");
 
+    const auto for_width = [&](usize y, Sampler &sampler)
+    {
+        for(usize x : range(width))
+        {
+            Spectrum radiance = arithmetic_mean(spp, [&]()
+            {
+                Point2f pixel = sampler.get_2D();
+                pixel.x += x;
+                pixel.y += y;
+                Ray3f ray = camera.generate_ray(pixel);
+                return integrator->Li(ray, scene, sampler);
+            });
+            camera.photo[x][y] = color_space(radiance).to_srgb();
+        }
+    };
+
     Timer timer;
     if(thread_count == 0)
     {
         Sampler sampler;
-
         for(usize y : range(height))
         {
-            for(usize x : range(width))
-            {
-                Spectrum radiance = arithmetic_mean(spp, [&]()
-                {
-                    Point2f pixel = sampler.get_2D();
-                    pixel.x += x;
-                    pixel.y += y;
-                    Ray3f ray = camera.generate_ray(pixel);
-                    return integrator->Li(ray, scene, sampler);
-                });
-                camera.photo[x][y] = color_space(radiance).to_srgb();
-            }
+            for_width(y, sampler);
             bar(static_cast<f64>(y) / height);
         }
     }
@@ -73,18 +76,7 @@ void Renderer::render()
         render_queue{count, height, [&](usize y)
         {
             static thread_local Sampler sampler;
-            for(usize x : range(width))
-            {
-                Spectrum radiance = arithmetic_mean(spp, [&]()
-                {
-                    Point2f pixel = sampler.get_2D();
-                    pixel.x += x;
-                    pixel.y += y;
-                    Ray3f ray = camera.generate_ray(pixel);
-                    return integrator->Li(ray, scene, sampler);
-                });
-                camera.photo[x][y] = color_space(radiance).to_srgb();
-            }
+            for_width(y, sampler);
             std::scoped_lock lock(m);
             bar(static_cast<f64>(y) / height);
         }};

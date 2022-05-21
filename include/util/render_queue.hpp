@@ -6,18 +6,18 @@
 
 #include "util.hpp"
 
-using u32 = std::uint_fast32_t;
+using usize = std::size_t;
 
 template <typename T> requires
-requires(u32 h, T fn) { { fn(h) } -> std::same_as<void>; }
+requires(usize h, T fn) { { fn(h) } -> std::same_as<void>; }
 struct render_queue
 {
 protected:
-    const u32 height;
-    const u32 count;
+    const usize height;
+    const usize count;
     const T fn;
     bool running = true;
-    std::atomic<u32> current_height = 0;
+    std::atomic<usize> current_height = 0;
 
     using worker = std::jthread;
 
@@ -29,7 +29,7 @@ protected:
     {
         while(running)
         {
-            u32 h;
+            usize h;
             if(get(h))
             {
                 fn(h); // render by line
@@ -44,7 +44,7 @@ protected:
 
     void stop() { running = false; }
 
-    bool get(u32& i)
+    bool get(usize& i)
     {
         if(current_height < height)
         {
@@ -71,7 +71,7 @@ public:
     render_queue& operator = (const render_queue&) = delete;
     render_queue& operator = (render_queue&&) = delete;
 
-    render_queue(u32 thread_count, u32 height, T fn)
+    render_queue(usize thread_count, usize height, T fn)
         : height(height)
         , count(thread_count)
         , fn(fn)

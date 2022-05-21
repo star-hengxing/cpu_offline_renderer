@@ -4,6 +4,7 @@
 #include <Core/Integrator/Integrator.hpp>
 #include <Scene/Scene.hpp>
 #include <util/Result.hpp>
+#include <make_scene.hpp>
 
 struct Renderer
 {
@@ -15,7 +16,7 @@ private:
     Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<Integrator>&& integrator);
 
 public:
-    static Result<Renderer, std::string_view> init(int argc, char const *argv[]);
+    static Result<Renderer, std::string_view> init(int argc, char const *argv[], return_type (*fn)());
 
     void render();
 };

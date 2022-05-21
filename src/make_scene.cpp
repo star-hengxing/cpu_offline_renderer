@@ -1,62 +1,37 @@
 // 屎山，等以后学有所成，用优雅的方式重构
 #include <make_scene.hpp>
 
-#include <util/Parser.hpp>
-
 #include <util/Color/color_space.hpp>
-#include <util/Color/Color.hpp>
-#include <util/util.hpp>
 
 #include <Core/Integrator/path_tracing_integrator.hpp>
-#include <Core/Integrator/direct_light_integrator.hpp>
 
 #include <Core/Primitive/geometry_primitive.hpp>
-
-#include <Core/Material/Mirror.hpp>
-#include <Core/Material/Matte.hpp>
 
 #include <Core/Texture/constant_texture.hpp>
 #include <Core/Texture/checker_texture.hpp>
 
-#include <Core/Light/point_light.hpp>
+#include <Core/Light/area_light.hpp>
 
-#include <Core/Shape/Sphere.hpp>
-#include <Core/Shape/Plane.hpp>
-#include <Core/Shape/Cube.hpp>
+#include <Core/Material/Matte.hpp>
+
+#include <Core/Shape/Rectangle.hpp>
+#include <Core/Shape/Cuboid.hpp>
+
+#include <util/util.hpp>
 
 #include <Hinae/Transform.hpp>
 
-void make_sphere(Scene& scene, const Vector3f& translate, f32 radius
-    , std::shared_ptr<Material> material)
-{
-    if(translate == Vector3f{0})
-    {
-        const auto& m = scene.identity();
-        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Sphere>(m, m, radius), material));
-    }
-    else
-    {
-        const auto& [m, inv] = scene.add
-        (
-            Transform<f32>::translate(translate),
-            Transform<f32>::translate(-translate)
-        );
-        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Sphere>(m, inv, radius), material));
-    }
-}
-
-void make_plane(Scene& scene, const Matrix4f& transform, f32 length
-    , std::shared_ptr<Material> material)
+void make_rectangle(Scene& scene, const Matrix4f& transform, f32 length, f32 width, std::shared_ptr<Material> material)
 {
     if(transform == Matrix4f::identity())
     {
         const auto& m = scene.identity();
-        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Plane>(m, m, length), material));
+        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Rectangle>(m, m, length, width), material));
     }
     else
     {
         const auto& [m, inv] = scene.add(transform);
-        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Plane>(m, inv, length), material));
+        scene.add(std::make_shared<geometry_primitive>(std::make_shared<Rectangle>(m, inv, length, width), material));
     }
 }
 
@@ -78,50 +53,68 @@ std::shared_ptr<Material> make_matte(Args... args)
     return std::make_shared<Matte>(std::make_shared<T>(std::forward<Args>(args)...));
 }
 
-std::tuple
-<
-    Scene,
-    perspective_camera,
-    std::unique_ptr<Integrator>
->
-parse()
+return_type cornell_box()
 {
     auto camera = perspective_camera
     {
-        1280, 720,
-        Point3f{0, 5, 10}, Point3f{0, 0, 0}, Vector3f{0, 1, 0},
-        60
+        700, 700,
+        Point3f{0, 5, 20}, Point3f{0, 5, 0}, Vector3f{0, 1, 0},
+        45
     };
 
     Scene scene;
 
-    constexpr f32 length = 10;
+    const auto matte_white = make_matte<constant_texture<Spectrum>>(RGB::white);
+    const auto matte_red = make_matte<constant_texture<Spectrum>>(RGB::red);
+    const auto matte_green = make_matte<constant_texture<Spectrum>>(RGB::green * 0.5);
 
-    auto m_back = translate_rotate<Axis::X>({0, length, -length}, 90);
-    auto m_left = translate_rotate<Axis::Z>({-length, length, 0}, 270);
-    auto m_right = translate_rotate<Axis::Z>({length, length, 0}, 90);
-    // auto m_ceil = Transform<f32>::translate({0, length, 0});
+    const auto matte_checker = make_matte<checker_texture<Spectrum>>(4, 4, RGB::white, RGB::cyan);
 
-    make_plane(scene, Matrix4f::identity(), length, make_matte<checker_texture<Spectrum>>(4, 4, RGB::white, RGB::cyan));
-    make_plane(scene, m_back, length, make_matte<constant_texture<Spectrum>>(RGB::white));
-    make_plane(scene, m_left, length, make_matte<constant_texture<Spectrum>>(RGB::red));
-    make_plane(scene, m_right, length, make_matte<constant_texture<Spectrum>>(RGB::green));
-    // make_plane(scene, m_ceil, length, make_matte<constant_texture<Spectrum>>(white));
+    {
+        constexpr f32 length = 5;
+        const auto t_back = translate_rotate<Axis::X>({0, length, -length}, 90);
+        const auto t_left = translate_rotate<Axis::Z>({-length, length, 0}, 270);
+        const auto t_right = translate_rotate<Axis::Z>({length, length, 0}, 90);
+        const auto t_ceil = Transform<f32>::translate({0, length * 2, 0});
 
-    auto m_cube = Transform<f32>::translate({0, 1, 3});
-    const auto& [m1, m2] = scene.add(m_cube);
-    auto cube = std::make_shared<Cube>(m1, m2);
-    scene.add(std::make_shared<geometry_primitive>(cube, make_matte<constant_texture<Spectrum>>(RGB::dodger_blue)));
+        make_rectangle(scene, Matrix4f::identity(), length, length, matte_checker);
+        make_rectangle(scene, t_back, length, length, matte_white);
+        make_rectangle(scene, t_left, length, length, matte_red);
+        make_rectangle(scene, t_right, length, length, matte_green);
+        make_rectangle(scene, t_ceil, length, length, matte_white);
+    }
+    // left Cuboid
+    {
+        const auto t = translate_rotate<Axis::Y>({-2, 3, -2}, 20);
+        const auto& [m, inv] = scene.add(t);
+        const auto shape = std::make_shared<Cuboid>(m, inv, 1.5, 1.5, 3);
+        scene.add(std::make_shared<geometry_primitive>(shape, matte_white));
+    }
+    // right Cuboid
+    {
+        const auto t = translate_rotate<Axis::Y>({1.5, 1.5, 1.5}, -15);
+        const auto& [m, inv] = scene.add(t);
+        const auto shape = std::make_shared<Cuboid>(m, inv, 1.5, 1.5, 1.5);
+        scene.add(std::make_shared<geometry_primitive>(shape, matte_white));
+    }
 
-    make_sphere(scene, {0, 4, -3}, 1, std::make_shared<Mirror>());
-    make_sphere(scene, {3, 1, -3}, 1, make_matte<constant_texture<Spectrum>>(RGB::yellow));
-    make_sphere(scene, {-3, 1, -3}, 1, make_matte<checker_texture<Spectrum>>(20, 20, RGB::white, RGB::black));
-
-    scene.add(std::make_shared<point_light>(Point3f{0, 10, 0}, Spectrum{100}));
+    {
+        const auto rectangle_light_transform = translate_rotate<Axis::X>({0, 9.99, 0}, 180);
+        const auto& [m, inv] = scene.add(rectangle_light_transform);
+        const auto shape = std::make_shared<Rectangle>(m, inv, 1, 1);
+        const auto light = std::make_shared<area_light>(shape, Spectrum{50});
+        scene.add(light);
+        scene.add(std::make_shared<geometry_primitive>(shape, nullptr, light));
+    }
 
     return std::make_tuple
     (
         std::move(scene), std::move(camera),
         std::make_unique<path_tracing_integrator>()
     );
+}
+
+return_type native()
+{
+    unimplemented();
 }
