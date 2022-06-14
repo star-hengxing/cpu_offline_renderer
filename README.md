@@ -6,7 +6,12 @@
 
 确保你的系统有xmake
 
-只支持MSVC和GCC进行编译
+只支持MSVC和GCC-12进行编译
+
+xmake运行时会自动下载项目的依赖，按照操作提示即可，如果下载失败，请看[这里](https://xmake.io/#/zh-cn/package/remote_package?id=%e8%bf%9c%e7%a8%8b%e5%8c%85%e4%b8%8b%e8%bd%bd%e4%bc%98%e5%8c%96)，我推荐手动设置代理(记得修改代理端口)
+```bash
+xmake g --proxy="socks5://127.0.0.1:<port>"
+```
 
 ```bash
 mkdir cg
@@ -40,28 +45,30 @@ xmake run main 1024 4
     - [x] 球
     - [x] 圆柱
     - [x] 圆盘
-    - [ ] 圆锥
+    - [x] 圆锥
     - [ ] 圆环
-    - [x] 三角形/三角形网格
     - [x] 立方体
+    - [x] 三角形/三角形网格
     - [ ] 构造实体几何(CSG, Constructive Solid Geometry)，提供并集、交集、补集
-    - [ ] 曲线(curves)->头发
+    - [ ] 曲线(curves) -> 头发
 
-* BXDF
+* BxDF
     - [x] 漫反射(Lambertian)
+    - [x] 导体(Conductor)
+    - [x] 绝缘体(Dielectric)
     - [ ] Oren-Nayer
     - [x] 微表面(GGX microfacet)
-    - [ ] 傅里叶(BSDF)
     - [ ] 次表面散射(BSSRDF)
 
 * 材质
     - [x] matte
-    - [x] 镜子(mirror)
+    - [x] 粗糙/光滑的金属(Metal)
+    - [x] 粗糙/光滑的玻璃
 
 * 纹理
     - [x] 常量(constant)
     - [x] 棋盘(checker)
-    - [ ] 贴图
+    - [x] 贴图
 
 * 光源
     - [x] 点光源(Point Light)

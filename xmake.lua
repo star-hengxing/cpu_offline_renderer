@@ -8,7 +8,7 @@ add_includedirs("../Hinae/include")
 add_includedirs("include")
 
 if is_os("linux") then
-    add_ldflags("-B/usr/lib/mold")
+    add_ldflags("-fuse-ld=mold")
     add_cxxflags("-fno-math-errno")
 elseif is_os("windows") then
     add_defines("_CRT_SECURE_NO_WARNINGS")
