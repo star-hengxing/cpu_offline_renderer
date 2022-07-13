@@ -4,15 +4,15 @@
 
 # Getting started
 
-确保你的系统有xmake
+确保你的系统有[xmake](https://xmake.io/)和支持C++20的编译器(MSVC, GCC)
 
-只支持MSVC和GCC-12进行编译
+Clang对C++20支持太慢，暂时不支持
 
-xmake运行时会自动下载项目的依赖，按照操作提示即可，如果下载失败，请看[这里](https://xmake.io/#/zh-cn/package/remote_package?id=%e8%bf%9c%e7%a8%8b%e5%8c%85%e4%b8%8b%e8%bd%bd%e4%bc%98%e5%8c%96)，我推荐手动设置代理(记得修改代理端口)
+xmake初始化项目会自动下载项目的依赖，按照操作提示即可，如果下载失败，请看[这里](https://xmake.io/#/zh-cn/package/remote_package?id=%e8%bf%9c%e7%a8%8b%e5%8c%85%e4%b8%8b%e8%bd%bd%e4%bc%98%e5%8c%96)，我推荐手动设置代理(记得修改代理端口)
 ```bash
 xmake g --proxy="socks5://127.0.0.1:<port>"
 ```
-
+按照命令行，依赖的Hinae放在cg目录，如果想放在项目目录内，需要修改`xmake.lua`
 ```bash
 mkdir cg
 cd cg
@@ -42,12 +42,12 @@ xmake run main 1024 4
     - [ ] 随机渐进光子映射(SPPM, Stochastic Progress Photon Mapping)
 
 * 几何
-    - [x] 球
-    - [x] 圆柱
-    - [x] 圆盘
-    - [x] 圆锥
-    - [ ] 圆环
-    - [x] 立方体
+    - [x] 球(Sphere)
+    - [x] 圆柱(Cylinder)
+    - [x] 圆盘(Disk == Annulus内半径长度为0)
+    - [x] 圆锥(Cone)
+    - [x] 圆环(Torus)
+    - [x] 立方体(Cuboid)
     - [x] 三角形/三角形网格
     - [ ] 构造实体几何(CSG, Constructive Solid Geometry)，提供并集、交集、补集
     - [ ] 曲线(curves) -> 头发
@@ -61,7 +61,7 @@ xmake run main 1024 4
     - [ ] 次表面散射(BSSRDF)
 
 * 材质
-    - [x] matte
+    - [x] Matte
     - [x] 粗糙/光滑的金属(Metal)
     - [x] 粗糙/光滑的玻璃
 

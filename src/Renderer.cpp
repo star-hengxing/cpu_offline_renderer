@@ -29,7 +29,7 @@ Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[], 
             thread_count = std::atoi(argv[2]);
     }
 
-    auto [scene, camera, integrator] = (fn == nullptr ? native() : cornell_box());
+    auto [scene, camera, integrator] = (fn == nullptr ? native() : fn());
 
     println("BVH build...");
     Timer::elapsed(&scene, &Scene::build);
