@@ -1,35 +1,14 @@
 #pragma once
 
-#include <string_view>
 #include <optional>
 
 #include "Color/Color.hpp"
 #include "Buffer2D.hpp"
 
-struct Image : public Buffer2D<Color>
-{
-public:
-    enum class Type
-    {
-        JPG,
-        PNG,
-        PPM,
-    };
+using Image = Buffer2D<Color>;
 
-public:
-    Image() = default;
-    using Buffer2D::Buffer2D;
+std::optional<Image> load(const char* path);
 
-    Image(const Image&) = delete;
-    Image& operator = (const Image&) = delete;
-
-    Image(Image&&) = default;
-    Image& operator = (Image&&) = default;
-
-    static std::optional<Image> read(const std::string_view& filename);
-
-    static void write(const std::string_view& filename, Image::Type type
-        , const u8* data, usize width, usize height);
-
-    void write(const std::string_view& filename, Type type) const;
-};
+bool save(const Image& image, const char* path);
+// Support png, jpg, ppm
+bool save(const char* path, const u8* data, usize width, usize height);

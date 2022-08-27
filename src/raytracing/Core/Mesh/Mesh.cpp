@@ -1,5 +1,3 @@
-#include <raytracing/Core/Mesh/Mesh.hpp>
-
 #include <string_view>
 #include <filesystem>
 #include <iostream>
@@ -7,9 +5,12 @@
 #include <memory>
 #include <ranges>
 
+#include <raytracing/Core/Mesh/Mesh.hpp>
+#include <util/marco.hpp>
 #include <util/util.hpp>
+#include <util/io.hpp>
 
-std::optional<Mesh> Mesh::read(const std::string_view& obj_path, const std::string_view& texture_path)
+std::optional<Mesh> Mesh::read(const char* obj_path, const char* texture_path)
 {
     Mesh mesh;
     if(!mesh.load_obj(obj_path) || mesh.empty())
@@ -18,7 +19,7 @@ std::optional<Mesh> Mesh::read(const std::string_view& obj_path, const std::stri
         return {};
     }
 
-    if(!texture_path.empty())
+    if(!texture_path)
     {
         if(!mesh.load_texture(texture_path))
         {
@@ -29,18 +30,18 @@ std::optional<Mesh> Mesh::read(const std::string_view& obj_path, const std::stri
     return std::make_optional<Mesh>(std::move(mesh));
 }
 
-bool Mesh::load_obj(const std::string_view& filename)
+bool Mesh::load_obj(const char* path)
 {
-    if(!std::filesystem::exists(filename))
+    if(!std::filesystem::exists(path))
         return false;
 
-    parse(filename);
+    parse(path);
     return true;
 }
 
-bool Mesh::load_texture(const std::string_view& filename)
+bool Mesh::load_texture(const char* path)
 {
-    texture = Image::read(filename);
+    texture = load(path);
     return texture.has_value();
 }
 
@@ -59,7 +60,9 @@ void Mesh::info() const
         << "uv: "     << !uvs.empty() << '\n';
 }
 
-static usize my_atoi(const std::string_view& str)
+NAMESPACE_BEGIN()
+
+usize my_atoi(const std::string_view& str)
 {
     usize number = 0;
     for(const auto& c : str)
@@ -91,14 +94,11 @@ T<U> string_to(const std::string_view& line)
     return ret;
 }
 
-void Mesh::parse(const std::string_view& filename)
-{
-    std::ifstream in(filename.data(), std::ifstream::in);
+NAMESPACE_END()
 
-    const auto size = std::filesystem::file_size(filename.data());
-    auto buffer = std::make_unique<char[]>(size + 1);
-    buffer[size] = '\0';
-    in.read(buffer.get(), size);
+void Mesh::parse(const char* path)
+{
+    const auto [buffer, size] = read_file(path);
 
     for(auto line : split(std::string_view{buffer.get(), size}, '\n'))
     {
@@ -134,5 +134,4 @@ void Mesh::parse(const std::string_view& filename)
             faces.emplace_back(f);
         }
     }
-    in.close();
 }

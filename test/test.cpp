@@ -1,5 +1,5 @@
 #include <raytracing/Core/Mesh/Mesh.hpp>
-#include <util/util.hpp>
+#include <util/Timer.hpp>
 
 void obj_test(int argc, char const *argv[])
 {

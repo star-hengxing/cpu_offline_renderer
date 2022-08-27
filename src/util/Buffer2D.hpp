@@ -8,53 +8,86 @@
 
 using usize = std::size_t;
 
-template <typename T, typename Container = std::vector<T>>
+template <typename T>
 struct Buffer2D
 {
 protected:
+    std::vector<T> data;
     usize width = 0, height = 0;
-    Container data;
 
 public:
     Buffer2D() = default;
     Buffer2D(usize width, usize height) : width(width), height(height), data(width * height) {}
 
-    Buffer2D(const Buffer2D&) = delete;
-    Buffer2D& operator = (const Buffer2D&) = delete;
+    Buffer2D(const Buffer2D& other)
+        : data(other.data)
+        , width(other.width), height(other.height) {}
 
-    Buffer2D(Buffer2D&&) = default;
-    Buffer2D& operator = (Buffer2D&&) = default;
+    Buffer2D& operator = (const Buffer2D& other)
+    {
+        auto tmp{other};
+        tmp.swap(*this);
+        return *this;
+    }
+
+    Buffer2D(Buffer2D&& other)
+        : data(std::move(other.data))
+        , width(other.width), height(other.height) {}
+
+    Buffer2D& operator = (Buffer2D&& other)
+    {
+        auto tmp{std::move(other)};
+        tmp.swap(*this);
+        return *this;
+    }
 
     void fill(const T& value) noexcept
     {
         std::ranges::fill(data, value);
     }
 
-    void copy(const Buffer2D& buf) noexcept
+    void resize(usize width, usize height) noexcept
     {
-        data = buf.data;
+        data.resize(width * height);
+        this->width = width;
+        this->height = height;
     }
 
-    Buffer2D clone() const noexcept
-    {
-        Buffer2D ret{width, height};
-        ret.copy(*this);
-        return ret;
-    }
-
-    const T* raw() const noexcept
+    auto raw() noexcept
     {
         return data.data();
-    }
-
-    Container& get() noexcept
-    {
-        return data;
     }
 
     std::tuple<usize, usize> get_width_height() const noexcept
     {
         return {width, height};
+    }
+    
+    auto begin() noexcept
+    {
+        return data.begin();
+    }
+    
+    auto end() noexcept
+    {
+        return data.end();
+    }
+
+    const auto cbegin() const noexcept
+    {
+        return data.cbegin();
+    }
+
+    const auto cend() const noexcept
+    {
+        return data.cend();
+    }
+
+    void swap(Buffer2D& other)
+    {
+        data.swap(other.data);
+        std::swap(width, other.width);
+        std::swap(height, other.height);
     }
 
     struct ProxyIndex

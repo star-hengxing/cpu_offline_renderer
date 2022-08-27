@@ -9,6 +9,7 @@
 #include <math/Ray3.hpp>
 
 #include <raytracing/hit_record.hpp>
+#include <util/View.hpp>
 
 struct geometry_primitive;
 
@@ -21,12 +22,11 @@ private:
     usize index;
 
 public:
-    MemoryPool(usize size)
-        : pool(std::make_unique<T[]>(size)), size(size), index(0) {}
+    MemoryPool(usize size) : pool(std::make_unique<T[]>(size)), size(size), index(0) {}
     
     T* alloc()
     {
-        if(index >= size)
+        if (index >= size)
         {
             return nullptr;
         }
@@ -53,7 +53,7 @@ struct BVH
         usize primitive_first;
         usize primitive_count;
 
-        Node() = default;
+        Node() {};
 
         void init_leaf(const Bounds3f& bounds, usize first, usize count);
 
@@ -72,7 +72,7 @@ struct BVH
         usize primitive_count;
         usize padding[2];
 
-        flat_array_node() = default;
+        flat_array_node() {};
     };
 
     struct Primitive_info
@@ -81,21 +81,21 @@ struct BVH
         Bounds3f bounds;
         Point3f  centroid;
 
-        Primitive_info() = default;
+        Primitive_info() {};
         Primitive_info(usize index, const Bounds3f& bounds);
     };
 
 private:
     usize total_nodes;
     usize total_geometrys;
-    std::vector<std::shared_ptr<geometry_primitive>> primitives;
+    std::vector<geometry_primitive*> primitives;
     std::unique_ptr<flat_array_node[]> flat_bvh;
 
 private:
     Node* recursive_build(MemoryPool<Node>& pool
         , std::vector<Primitive_info>& primitive_info
         , usize start, usize end
-        , std::vector<std::shared_ptr<geometry_primitive>>& order_primitive);
+        , std::vector<geometry_primitive*>& order_primitive);
 
     isize recursive_intersect(const Ray3f& ray
         , hit_record& record
@@ -105,11 +105,11 @@ private:
     usize recursive_flat(Node* node, usize& index);
 
 public:
-    BVH() = default;
+    BVH() {};
 
-    BVH(const std::vector<std::shared_ptr<geometry_primitive>>& data);
+    BVH(const View<geometry_primitive*>& data);
     
-    void build(const std::vector<std::shared_ptr<geometry_primitive>>& data);
+    void build(const View<geometry_primitive*>& data);
 
     std::optional<hit_record> intersect(const Ray3f& ray) const;
 

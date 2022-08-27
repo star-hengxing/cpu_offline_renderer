@@ -4,16 +4,18 @@
 #include <raytracing/Core/Shape/Shape.hpp>
 #include <raytracing/hit_record.hpp>
 
-geometry_primitive::geometry_primitive(
-    std::shared_ptr<Shape> shape
-    , std::shared_ptr<Material> material
-    , std::shared_ptr<Light> light)
-    : shape(shape), material(material), light(light) {}
+geometry_primitive::geometry_primitive(Shape* shape, Material* material, Light* light) :
+    shape(shape), material(material), light(light) {}
 
 bool geometry_primitive::intersect(const Ray3f& ray3, hit_record& record) const
 {
-    if(!shape->intersect(ray3, record)) return false;
-    if(light) record.light = light;
+    if (!shape->intersect(ray3, record))
+        return false;
+
+    if (light)
+    {
+        record.light = light;
+    }
     return true;
 }
 
@@ -29,7 +31,7 @@ void geometry_primitive::get_intersect_record(const Ray3f& ray3, hit_record& rec
 
 void geometry_primitive::compute_BxDF(hit_record& record) const
 {
-    if(material)
+    if (material)
     {
         material->compute(record);
     }

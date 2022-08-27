@@ -20,6 +20,8 @@ public:
     Image photo;
 
 public:
+    Camera() {}
+
     Camera(usize width, usize height
         , const Point3f& pos
         , const Point3f& at
@@ -27,7 +29,7 @@ public:
 
     // virtual ~Camera() = default;
 
-    void save_photo(const std::string_view& filename) const;
+    void save(const char* path) const;
 
     Matrix4f look_at() const;
 

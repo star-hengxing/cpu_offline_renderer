@@ -11,8 +11,6 @@ struct hit_record;
 struct Primitive
 {
 public:
-    virtual ~Primitive() = default;
-
     virtual bool intersect(const Ray3f& ray3, hit_record& record) const = 0;
 
     virtual Bounds3f world_bound() const = 0;

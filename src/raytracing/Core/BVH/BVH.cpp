@@ -1,8 +1,8 @@
-#include <raytracing/Core/BVH/BVH.hpp>
-
 #include <raytracing/Core/Primitive/geometry_primitive.hpp>
+#include <raytracing/Core/BVH/BVH.hpp>
 #include <raytracing/hit_record.hpp>
-#include <util/util.hpp>
+#include <util/range.hpp>
+#include <util/io.hpp>
 
 using Node            = BVH::Node;
 using Primitive_info  = BVH::Primitive_info;
@@ -16,7 +16,7 @@ private:
     T top = 0;
 
 public:
-    Stack() = default;
+    Stack() {};
 
     void push(T value)
     {
@@ -58,23 +58,28 @@ void Node::init_interior(Axis axis, Node* left, Node* right)
     primitive_count = 0;
 }
 
-BVH::BVH(const std::vector<std::shared_ptr<geometry_primitive>>& data)
+BVH::BVH(const View<geometry_primitive*>& data)
 {
     build(data);
 }
 
-void BVH::build(const std::vector<std::shared_ptr<geometry_primitive>>& data)
+void BVH::build(const View<geometry_primitive*>& data)
 {
-    if(data.empty()) return;
+    if (data.empty()) return;
     total_nodes = total_geometrys = 0;
 
-    primitives = data;
+    primitives.reserve(data.size);
+    for (auto i : range(data.size))
+    {
+        primitives[i] = data[i];
+    }
+
     MemoryPool<Node> pool(primitives.size() * 2 - 1);
-    std::vector<std::shared_ptr<geometry_primitive>> order_primitive;
+    std::vector<geometry_primitive*> order_primitive;
     order_primitive.reserve(primitives.size());
 
     std::vector<Primitive_info> primitive_info(primitives.size());
-    for(auto [i, value] : enumerate(primitive_info))
+    for (auto [i, value] : enumerate(primitive_info))
     {
         value = Primitive_info{i, primitives[i]->world_bound()};
     }
@@ -90,10 +95,10 @@ void BVH::build(const std::vector<std::shared_ptr<geometry_primitive>>& data)
 Node* BVH::recursive_build(MemoryPool<Node>& pool
     , std::vector<Primitive_info>& primitive_info
     , usize start, usize end
-    , std::vector<std::shared_ptr<geometry_primitive>>& order_primitive)
+    , std::vector<geometry_primitive*>& order_primitive)
 {
     Node* node = pool.alloc();
-    if(!node)
+    if (!node)
     {
         println("out of MemoryPool<BVH::Node>");
         exit(-1);
@@ -101,13 +106,13 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
     total_nodes++;
 
     Bounds3f bounds = primitive_info[start].bounds;
-    for(usize i : range(start + 1, end))
+    for (auto i : range(start + 1, end))
     {
         bounds = Union(bounds, primitive_info[i].bounds);
     }
 
     usize size = end - start;
-    if(size == 1)
+    if (size == 1)
     {
         order_primitive.push_back(primitives[primitive_info[start].index]);
         node->init_leaf(bounds, order_primitive.size() - 1, 1);
@@ -117,13 +122,13 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
     {
         assert(!is_zero(size));
         Bounds3f centroid_bounds = primitive_info[start].centroid;
-        for(usize i : range(start + 1, end))
+        for (usize i : range(start + 1, end))
         {
             centroid_bounds = Union(centroid_bounds, primitive_info[i].centroid);
         }
 
         Axis axis = centroid_bounds.max_extent();
-        if(centroid_bounds.p_min[axis] != centroid_bounds.p_max[axis])
+        if (centroid_bounds.p_min[axis] != centroid_bounds.p_max[axis])
         {
             usize mid = (start + end) / 2;
             const f32 f_mid = (centroid_bounds.p_min[axis] + centroid_bounds.p_max[axis]) / 2;
@@ -135,7 +140,7 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
                 });
 
             mid = p_mid - &primitive_info[0];
-            if(mid == start || mid == end)
+            if (mid == start || mid == end)
             {
                 mid = (start + end) / 2;
                 std::nth_element(&primitive_info[start]
@@ -156,7 +161,7 @@ Node* BVH::recursive_build(MemoryPool<Node>& pool
         else
         {
             const usize first_index = order_primitive.size();
-            for(usize i : range(start, end))
+            for (usize i : range(start, end))
             {
                 order_primitive.push_back(primitives[primitive_info[i].index]);
             }
@@ -174,7 +179,7 @@ usize BVH::recursive_flat(Node* node, usize& index)
     usize next = index;
     index++;
 
-    if(node->primitive_count > 0)
+    if (node->primitive_count > 0)
     {
         array_node->primitive_first = node->primitive_first;
         array_node->primitive_count = node->primitive_count;
@@ -200,22 +205,22 @@ isize BVH::recursive_intersect(const Ray3f& ray
     while(true)
     {
         const flat_array_node* node = &flat_bvh[current];
-        if(node->bounds.intersect(ray, inv_dir))
+        if (node->bounds.intersect(ray, inv_dir))
         {
-            if(node->primitive_count > 0)
+            if (node->primitive_count > 0)
             {
                 const auto end = node->primitive_first + node->primitive_count;
-                for(usize i : range(node->primitive_first, end))
+                for (usize i : range(node->primitive_first, end))
                 {
                     if(primitives[i]->intersect(ray, record))
                         index = i;
                 }
-                if(stack.empty()) break;
+                if (stack.empty()) break;
                 current = stack.pop();
             }
             else
             {
-                if(dir_is_negative[static_cast<usize>(node->axis)])
+                if (dir_is_negative[static_cast<usize>(node->axis)])
                 {
                     stack.push(current + 1);
                     current = node->right_index;
@@ -229,7 +234,7 @@ isize BVH::recursive_intersect(const Ray3f& ray
         }
         else
         {
-            if(stack.empty()) break;
+            if (stack.empty()) break;
             current = stack.pop();
         }
     }
@@ -244,7 +249,7 @@ std::optional<hit_record> BVH::intersect(const Ray3f& ray) const
     const std::array<bool, 3> dir_is_negative{x < 0, y < 0, z < 0};
 
     const auto index = recursive_intersect(ray, record, inv_dir, dir_is_negative);
-    if(index == without_intersect) return {};
+    if (index == without_intersect) return {};
 
     primitives[index]->get_intersect_record(ray, record);
     primitives[index]->compute_BxDF(record);

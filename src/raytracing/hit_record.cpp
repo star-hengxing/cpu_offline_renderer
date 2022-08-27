@@ -1,5 +1,4 @@
 #include <raytracing/hit_record.hpp>
-
 #include <raytracing/global.hpp>
 
 bool hit_record::is_hit() const

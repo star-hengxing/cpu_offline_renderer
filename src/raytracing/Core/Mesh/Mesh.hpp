@@ -31,14 +31,14 @@ struct Mesh
     std::optional<Image> texture;
 
 private:
-    void parse(const std::string_view& filename);
+    void parse(const char* path);
 
 public:
-    static std::optional<Mesh> read(const std::string_view& obj_path, const std::string_view& texture_path = "");
+    static std::optional<Mesh> read(const char* obj_path, const char* texture_path = "");
 
-    bool load_obj(const std::string_view& filename);
+    bool load_obj(const char* path);
 
-    bool load_texture(const std::string_view& filename);
+    bool load_texture(const char* path);
 
     bool empty() const;
 

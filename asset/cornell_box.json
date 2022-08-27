@@ -1,0 +1,75 @@
+{
+    "Config": {
+        "spp": 4,
+        "thread": 0,
+        "Integrator": "pt"
+    },
+    "Camera": {
+        "width": 700,
+        "height": 700,
+        "pos": [
+            0,
+            5,
+            17
+        ],
+        "at": [
+            0,
+            5,
+            0
+        ],
+        "up": [
+            0,
+            1,
+            0
+        ],
+        "fov_angle": 45
+    },
+    "Shapes": [
+        {
+            "type": "Rectangle",
+            "transform": null,
+            "length": 1,
+            "width": 1,
+            "material": "matte_white"
+        }
+    ],
+    "Materials": [
+        {
+            "name": "matte_white",
+            "type": "Matte",
+            "kd": {
+                "type": "constant_texture",
+                "value": [
+                    255,
+                    255,
+                    255
+                ]
+            }
+        }
+    ],
+    "Lights": [
+        {
+            "Shape": {
+                "type": "Rectangle",
+                "transform": {
+                    "translate": [
+                        0,
+                        9.99,
+                        0
+                    ],
+                    "rotate": {
+                        "Axis": 0,
+                        "angle": 180
+                    },
+                    "scale": null
+                },
+                "length": 1,
+                "width": 1
+            },
+            "Light": {
+                "type": "area_light",
+                "emit": 50
+            }
+        }
+    ]
+}

@@ -11,7 +11,7 @@ if is_os("linux") then
 end
 
 set_warnings("all")
-set_languages("cxxlatest")
+set_languages("cxx20")
 
 add_includedirs("src")
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include <math/Vector3.hpp>
 #include <math/Point3.hpp>
 #include <math/Point2.hpp>
@@ -13,15 +11,15 @@ struct Light;
 
 struct hit_record
 {
-    f32 t_min = INFINITY_<f32>;
-    f32 t_max = INFINITY_<f32>;
-    Point3f p;
+    f32      t_min = INFINITY_<f32>;
+    f32      t_max = INFINITY_<f32>;
+    Point3f  p;
     Vector3f n;
-    Point2f uv;
-    BSDF bsdf;
-    std::shared_ptr<Light> light;
+    Point2f  uv;
+    BSDF     bsdf;
+    Light*   light;
 
-    hit_record() = default;
+    hit_record() {}
 
     bool is_hit() const;
 

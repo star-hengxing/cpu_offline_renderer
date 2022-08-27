@@ -2,8 +2,6 @@
 
 #include "Primitive.hpp"
 
-#include <memory>
-
 struct Shape;
 struct Light;
 struct Material;
@@ -11,17 +9,14 @@ struct Material;
 struct geometry_primitive : public Primitive
 {
 private:
-    std::shared_ptr<Shape> shape;
-    std::shared_ptr<Material> material;
-    std::shared_ptr<Light> light;
+    Shape*    shape;
+    Material* material;
+    Light*    light;
 
 public:
-    geometry_primitive() = default;
+    geometry_primitive() {}
 
-    geometry_primitive(
-        std::shared_ptr<Shape> shape,
-        std::shared_ptr<Material> material,
-        std::shared_ptr<Light> light = nullptr);
+    geometry_primitive(Shape* shape, Material* material, Light* light = nullptr);
 
     virtual bool intersect(const Ray3f& ray3, hit_record& record) const override;
 

@@ -1,17 +1,24 @@
-#include <raytracing/Renderer.hpp>
-#include <util/util.hpp>
+#include <string_view>
+#include <filesystem>
 
-int main(int argc, char const *argv[])
+#include <raytracing/Renderer/Renderer.hpp>
+#include <util/io.hpp>
+
+int main(int argc, char const* argv[])
 {
-    Result<Renderer, std::string_view> result = Renderer::init(argc, argv, cornell_box);
-    if(result.is_err())
+    if (argc != 2)
     {
-        println(result.err_value());
+        println("invalid parameter");
         return -1;
     }
-    else
+
+    const auto file = std::string_view{argv[1]};
+
+    if (!file.ends_with(".json") || !std::filesystem::exists(file))
     {
-        result.take_ok_value().render();
-        return 0;
+        println("invalid scene file");
+        return -1;
     }
+
+    render(file.data());
 }
