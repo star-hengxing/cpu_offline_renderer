@@ -16,7 +16,7 @@ private:
     T top = 0;
 
 public:
-    Stack() {};
+    Stack() {}
 
     void push(T value)
     {
@@ -68,25 +68,27 @@ void BVH::build(const View<geometry_primitive*>& data)
     if (data.empty()) return;
     total_nodes = total_geometrys = 0;
 
-    primitives.reserve(data.size);
-    for (auto i : range(data.size))
+    const auto size = data.size;
+    primitives.reserve(size);
+
+    for (auto i : range(size))
     {
         primitives[i] = data[i];
     }
 
-    MemoryPool<Node> pool(primitives.size() * 2 - 1);
+    MemoryPool<Node> pool(size * 2 - 1);
     std::vector<geometry_primitive*> order_primitive;
-    order_primitive.reserve(primitives.size());
+    order_primitive.reserve(size);
 
-    std::vector<Primitive_info> primitive_info(primitives.size());
+    std::vector<Primitive_info> primitive_info(size);
     for (auto [i, value] : enumerate(primitive_info))
     {
         value = Primitive_info{i, primitives[i]->world_bound()};
     }
 
-    Node* root = recursive_build(pool, primitive_info, 0, primitive_info.size(), order_primitive);
-
+    Node* root = recursive_build(pool, primitive_info, 0, size, order_primitive);
     primitives.swap(order_primitive);
+
     flat_bvh = std::make_unique<flat_array_node[]>(total_nodes);
     usize index = 0;
     recursive_flat(root, index);

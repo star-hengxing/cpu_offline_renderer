@@ -1,6 +1,7 @@
 #include <optional>
 #include <fstream>
 #include <cassert>
+#include <memory>
 // forward declare
 #include "scene_payload.hpp"
 #include "Scene.hpp"
@@ -10,6 +11,8 @@
 #include <raytracing/Core/Shape/Rectangle.hpp>
 
 #include <raytracing/Core/Material/Matte.hpp>
+
+#include <raytracing/Core/Texture/constant_texture.hpp>
 
 #include <raytracing/Core/Light/area_light.hpp>
 
@@ -83,6 +86,33 @@ auto release(T** ptr, usize count)
     }
     return ptr + count;
 };
+
+std::unique_ptr<Texture> make_constant_texture(const json& j)
+{
+    const auto r      = j["albedo"][0].get<u8>();
+    const auto g      = j["albedo"][1].get<u8>();
+    const auto b      = j["albedo"][2].get<u8>();
+    const auto albedo = rgb_to_float<f32>(Color(r, g, b));
+    return std::make_unique<constant_texture>(albedo);
+}
+
+std::unique_ptr<Texture> make_texture(const json& j)
+{
+    std::unique_ptr<Texture> texture;
+
+    const auto type = j["type"].get<std::string_view>();
+
+    if (type == "constant_texture")
+    {
+        texture = make_constant_texture(j);
+    }
+    else
+    {
+        println("invalid texture type");
+        exit(-1);
+    }
+    return texture;
+}
 
 NAMESPACE_END()
 
@@ -222,8 +252,8 @@ void scene_payload::init_pass()
 
     shapes     = (Shape**)(matrixes + matrix_max_count);
     materials  = (Material**)(shapes + shape_max_count);
-    lights     = (Light**)(matrixes + material_max_count);
-    primitives = (geometry_primitive**)(matrixes + light_max_count);
+    lights     = (Light**)(materials + material_max_count);
+    primitives = (geometry_primitive**)(lights + light_max_count);
 }
 
 void scene_payload::config_pass(const json& j)
@@ -321,8 +351,8 @@ bool scene_payload::load(const char* path)
     config_pass(json["Config"]);
     camera_pass(json["Camera"]);
     // init material first
-    // material_pass(json["Materials"]);
-    // shape_pass(json["Shapes"]);
+    material_pass(json["Materials"]);
+    shape_pass(json["Shapes"]);
     light_pass(json["Lights"]);
 
     materials_name.clear();
@@ -414,14 +444,6 @@ Light* scene_payload::make_area_light(const json& j)
 
 Material* scene_payload::make_matte(const json& j)
 {
-    return {};
+    auto albedo = make_texture(j["albedo"]);
+    return new Matte(std::move(albedo));
 }
-
-// auto get_constant_texture(const json& j)
-// {
-//     auto r = j["value"][0].get<u8>();
-//     auto g = j["value"][1].get<u8>();
-//     auto b = j["value"][2].get<u8>();
-
-//     const auto value = rgb_to_float<f32>(Color(r, g, b));
-// }

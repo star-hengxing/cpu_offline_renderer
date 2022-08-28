@@ -7,7 +7,6 @@
 #include <util/View.hpp>
 
 struct geometry_primitive;
-struct Material;
 struct Light;
 
 struct Scene

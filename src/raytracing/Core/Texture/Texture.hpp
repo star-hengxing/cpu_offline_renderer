@@ -1,12 +1,14 @@
 #pragma once
 
+#include <math/Vector3.hpp>
+
+using Spectrum = Vector3f;
+
 struct hit_record;
 
-template <typename T>
 struct Texture
 {
-public:
-    virtual ~Texture() = default;
+    virtual ~Texture() {}
 
-    virtual T evaluate(const hit_record& record) const = 0;
+    virtual Spectrum evaluate(const hit_record& record) const = 0;
 };

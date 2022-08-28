@@ -53,7 +53,7 @@ struct BVH
         usize primitive_first;
         usize primitive_count;
 
-        Node() {};
+        Node() {}
 
         void init_leaf(const Bounds3f& bounds, usize first, usize count);
 
@@ -72,7 +72,7 @@ struct BVH
         usize primitive_count;
         usize padding[2];
 
-        flat_array_node() {};
+        flat_array_node() {}
     };
 
     struct Primitive_info
@@ -81,7 +81,7 @@ struct BVH
         Bounds3f bounds;
         Point3f  centroid;
 
-        Primitive_info() {};
+        Primitive_info() {}
         Primitive_info(usize index, const Bounds3f& bounds);
     };
 
@@ -105,7 +105,7 @@ private:
     usize recursive_flat(Node* node, usize& index);
 
 public:
-    BVH() {};
+    BVH() {}
 
     BVH(const View<geometry_primitive*>& data);
     

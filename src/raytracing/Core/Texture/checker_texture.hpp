@@ -1,34 +1,24 @@
 #pragma once
 
-#include "constant_texture.hpp"
+#include <raytracing/hit_record.hpp>
+#include <util/basic_type.hpp>
 
-#include <memory>
-#include <cmath>
+#include "Texture.hpp"
 
-using usize = std::size_t;
-
-template <typename T>
-struct checker_texture : public Texture<T>
+struct checker_texture : public Texture
 {
 private:
-    usize width, height;
-    constant_texture<T> c1, c2;
+    usize    width, height;
+    Spectrum albedo_u, albedo_v;
 
 public:
-    checker_texture(usize width, usize height, const T& c1, const T& c2)
-        : width(width), height(height)
-        , c1(constant_texture<T>(c1))
-        , c2(constant_texture<T>(c2)) {}
+    checker_texture(usize width, usize height, const Spectrum& albedo_u, const Spectrum& albedo_v) :
+        width(width), height(height), albedo_u(albedo_u), albedo_v(albedo_v) {}
 
-    static std::shared_ptr<Texture<T>> make(usize width, usize height, const T& c1, const T& c2)
-    {
-        return std::make_shared<checker_texture<T>>(width, height, c1, c2);
-    }
-
-    virtual T evaluate(const hit_record& record) const
+    virtual Spectrum evaluate(const hit_record& record) const override
     {
         const auto u = static_cast<usize>(std::floor(record.uv.x * width));
         const auto v = static_cast<usize>(std::floor(record.uv.y * height));
-        return (u + v) % 2 == 0 ? c1.evaluate(record) : c2.evaluate(record);
+        return (u + v) % 2 == 0 ? albedo_u : albedo_v;
     }
 };

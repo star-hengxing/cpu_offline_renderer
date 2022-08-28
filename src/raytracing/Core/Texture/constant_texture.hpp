@@ -2,24 +2,16 @@
 
 #include "Texture.hpp"
 
-#include <memory>
-
-template <typename T>
-struct constant_texture : public Texture<T>
+struct constant_texture : public Texture
 {
 private:
-    T value;
+    const Spectrum albedo;
 
 public:
-    constant_texture(const T& value) : value(value) {}
+    constant_texture(const Spectrum& albedo) : albedo(albedo) {}
 
-    static std::shared_ptr<Texture<T>> make(const T& value)
+    virtual Spectrum evaluate(const hit_record& record) const override
     {
-        return std::make_shared<constant_texture<T>>(value);
-    }
-
-    virtual T evaluate(const hit_record& record) const
-    {
-        return value;
+        return albedo;
     }
 };
