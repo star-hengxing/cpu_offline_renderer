@@ -37,12 +37,15 @@ constexpr T<U> get_float3(const json& j, const char* filed)
 
 Matrix4f get_matrix(const json& j)
 {
-    auto matrix = Matrix4f::identity();
+    auto t = Matrix4f::identity();
+    auto r = Matrix4f::identity();
+    auto s = Matrix4f::identity();
+
     if (!j["translate"].is_null())
     {
         const auto v = get_float3<Vector3, f32>(j, "translate");
 
-        matrix = Transform<f32>::translate(v) * matrix;
+        t = Transform<f32>::translate(v);
     }
 
     if (!j["rotate"].is_null())
@@ -51,15 +54,15 @@ Matrix4f get_matrix(const json& j)
         const auto angle = j["rotate"]["angle"].get<f32>();
         if (axis == Axis::X)
         {
-            matrix = Transform<f32>::rotate<Axis::X>(angle) * matrix;
+            r = Transform<f32>::rotate<Axis::X>(angle);
         }
         else if (axis == Axis::Y)
         {
-            matrix = Transform<f32>::rotate<Axis::Y>(angle) * matrix;
+            r = Transform<f32>::rotate<Axis::Y>(angle);
         }
         else if (axis == Axis::Z)
         {
-            matrix = Transform<f32>::rotate<Axis::Z>(angle) * matrix;
+            r = Transform<f32>::rotate<Axis::Z>(angle);
         }
         else
         {
@@ -72,9 +75,10 @@ Matrix4f get_matrix(const json& j)
     {
         const auto [x, y, z] = get_float3<Vector3, f32>(j, "scale");
 
-        matrix = Transform<f32>::scale(x, y, z) * matrix;
+        s = Transform<f32>::scale(x, y, z);
     }
-    return matrix;
+
+    return t * r * s;
 }
 
 template <typename T>

@@ -17,7 +17,7 @@ struct hit_record
     Vector3f n;
     Point2f  uv;
     BSDF     bsdf;
-    Light*   light;
+    Light*   light = nullptr;
 
     hit_record() {}
 
