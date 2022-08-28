@@ -9,6 +9,7 @@
 #include <raytracing/Core/Primitive/geometry_primitive.hpp>
 
 #include <raytracing/Core/Shape/Rectangle.hpp>
+#include <raytracing/Core/Shape/Cuboid.hpp>
 
 #include <raytracing/Core/Material/Matte.hpp>
 
@@ -389,6 +390,10 @@ Shape* scene_payload::make_shape(const json& j)
     {
         shape = make_rectangle(j);
     }
+    else if (type == "Cuboid")
+    {
+        shape = make_cuboid(j);
+    }
     else
     {
         println("invalid shape type");
@@ -436,7 +441,30 @@ Shape* scene_payload::make_rectangle(const json& j)
     const auto transform = get_transform(j["transform"]);
     const auto length    = j["length"].get<f32>();
     const auto width     = j["width"].get<f32>();
-    return new Rectangle(transform[0], transform[1], length, width);
+    if (transform == matrixes)
+    {
+        return new Rectangle(transform[0], transform[0], length, width);
+    }
+    else
+    {
+        return new Rectangle(transform[0], transform[1], length, width);
+    }
+}
+
+Shape* scene_payload::make_cuboid(const json& j)
+{
+    const auto transform = get_transform(j["transform"]);
+    const auto length    = j["length"].get<f32>();
+    const auto width     = j["width"].get<f32>();
+    const auto height    = j["height"].get<f32>();
+    if (transform == matrixes)
+    {
+        return new Cuboid(transform[0], transform[0], length, width, height);
+    }
+    else
+    {
+        return new Cuboid(transform[0], transform[1], length, width, height);
+    }
 }
 
 Light* scene_payload::make_area_light(const json& j)

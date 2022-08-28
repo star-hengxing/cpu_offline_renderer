@@ -88,6 +88,7 @@ private:
     Light*    make_light(const json& j);
 
     Shape* make_rectangle(const json& j);
+    Shape* make_cuboid(const json& j);
 
     Material* make_matte(const json& j);
 

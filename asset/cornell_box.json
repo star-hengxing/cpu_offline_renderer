@@ -28,8 +28,115 @@
         {
             "type": "Rectangle",
             "transform": null,
-            "length": 1,
-            "width": 1,
+            "length": 5,
+            "width": 5,
+            "material": "matte_white"
+        },
+        {
+            "type": "Rectangle",
+            "transform": {
+                "translate": [
+                    0,
+                    5,
+                    -5
+                ],
+                "rotate": {
+                    "Axis": 0,
+                    "angle": 90
+                },
+                "scale": null
+            },
+            "length": 5,
+            "width": 5,
+            "material": "matte_white"
+        },
+        {
+            "type": "Rectangle",
+            "transform": {
+                "translate": [
+                    -5,
+                    5,
+                    0
+                ],
+                "rotate": {
+                    "Axis": 2,
+                    "angle": 270
+                },
+                "scale": null
+            },
+            "length": 5,
+            "width": 5,
+            "material": "matte_red"
+        },
+        {
+            "type": "Rectangle",
+            "transform": {
+                "translate": [
+                    5,
+                    5,
+                    0
+                ],
+                "rotate": {
+                    "Axis": 2,
+                    "angle": 90
+                },
+                "scale": null
+            },
+            "length": 5,
+            "width": 5,
+            "material": "matte_green"
+        },
+        {
+            "type": "Rectangle",
+            "transform": {
+                "translate": [
+                    0,
+                    10,
+                    0
+                ],
+                "rotate": null,
+                "scale": null
+            },
+            "length": 5,
+            "width": 5,
+            "material": "matte_white"
+        },
+        {
+            "type": "Cuboid",
+            "transform": {
+                "translate": [
+                    -2,
+                    3,
+                    -2
+                ],
+                "rotate": {
+                    "Axis": 1,
+                    "angle": 20
+                },
+                "scale": null
+            },
+            "length": 1.5,
+            "width": 1.5,
+            "height": 3,
+            "material": "matte_white"
+        },
+        {
+            "type": "Cuboid",
+            "transform": {
+                "translate": [
+                    1.5,
+                    1.5,
+                    1.5
+                ],
+                "rotate": {
+                    "Axis": 1,
+                    "angle": -15
+                },
+                "scale": null
+            },
+            "length": 1.5,
+            "width": 1.5,
+            "height": 1.5,
             "material": "matte_white"
         }
     ],
@@ -37,12 +144,36 @@
         {
             "name": "matte_white",
             "type": "Matte",
-            "kd": {
+            "albedo": {
                 "type": "constant_texture",
-                "value": [
+                "albedo": [
                     255,
                     255,
                     255
+                ]
+            }
+        },
+        {
+            "name": "matte_red",
+            "type": "Matte",
+            "albedo": {
+                "type": "constant_texture",
+                "albedo": [
+                    255,
+                    0,
+                    0
+                ]
+            }
+        },
+        {
+            "name": "matte_green",
+            "type": "Matte",
+            "albedo": {
+                "type": "constant_texture",
+                "albedo": [
+                    0,
+                    126,
+                    0
                 ]
             }
         }

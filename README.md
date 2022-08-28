@@ -15,18 +15,13 @@ xmake g --proxy="socks5://127.0.0.1:<port>"
 按照命令行，依赖的Hinae放在cg目录，如果想放在项目目录内，需要修改`xmake.lua`
 ```bash
 git clone --depth 1 https://github.com/star-hengxing/cpu_offline_renderer
-xmake
-xmake run
+xmake build main
+xmake run main asset/cornell_box.json
 ```
 
 等待渲染结束，你可以在 images 目录里查看渲染图片
 
-可以通过命令行参数传递 spp 和线程数，默认单线程，spp=4
-
-```bash
-xmake run main <spp> <thread count>
-xmake run main 1024 4
-```
+可以在[cornell_box.json](asset/cornell_box.json)修改`spp`和线程数，默认单线程，spp=4
 
 # Feature
 
