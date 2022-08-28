@@ -1,10 +1,9 @@
 #include <raytracing/Core/Light/area_light.hpp>
-
 #include <raytracing/Core/Shape/Shape.hpp>
 #include <raytracing/hit_record.hpp>
 #include <raytracing/global.hpp>
 
-area_light::area_light(const std::shared_ptr<Shape>& shape, const Spectrum& emit)
+area_light::area_light(const Shape* shape, const Spectrum& emit)
     : Light(Flags::area)
     , shape(shape), emit(emit), area(shape->area()) {}
 

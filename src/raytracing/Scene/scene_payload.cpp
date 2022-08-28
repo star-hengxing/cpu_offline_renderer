@@ -1,3 +1,4 @@
+#include <optional>
 #include <fstream>
 #include <cassert>
 // forward declare
@@ -10,10 +11,11 @@
 
 #include <raytracing/Core/Material/Matte.hpp>
 
-#include <raytracing/Core/Light/Light.hpp>
+#include <raytracing/Core/Light/area_light.hpp>
 
-#include <util/util.hpp>
 #include <util/marco.hpp>
+#include <util/util.hpp>
+#include <util/io.hpp>
 
 #include <math/Transform.hpp>
 
@@ -33,10 +35,11 @@ constexpr T<U> get_float3(const json& j, const char* filed)
 Matrix4f get_matrix(const json& j)
 {
     auto matrix = Matrix4f::identity();
-    if (!j["scale"].is_null())
+    if (!j["translate"].is_null())
     {
-        const auto [x, y, z] = get_float3<Vector3, f32>(j, "scale");
-        matrix               = Transform<f32>::scale(x, y, z) * matrix;
+        const auto v = get_float3<Vector3, f32>(j, "translate");
+
+        matrix = Transform<f32>::translate(v) * matrix;
     }
 
     if (!j["rotate"].is_null())
@@ -56,13 +59,17 @@ Matrix4f get_matrix(const json& j)
             matrix = Transform<f32>::rotate<Axis::Z>(angle) * matrix;
         }
         else
-        {}
+        {
+            println("invalid axis type");
+            exit(-1);
+        }
     }
-    if (!j["translate"].is_null())
-    {
-        const auto v = get_float3<Vector3, f32>(j, "translate");
 
-        matrix = Transform<f32>::translate(v) * matrix;
+    if (!j["scale"].is_null())
+    {
+        const auto [x, y, z] = get_float3<Vector3, f32>(j, "scale");
+
+        matrix = Transform<f32>::scale(x, y, z) * matrix;
     }
     return matrix;
 }
@@ -79,10 +86,39 @@ auto release(T** ptr, usize count)
 
 NAMESPACE_END()
 
+Matrix4f* scene_payload::get_matrix_position()
+{
+    assert(matrix_count <= matrix_max_count);
+    return matrixes + matrix_count;
+}
+
+Shape** scene_payload::get_shape_position()
+{
+    assert(shape_count <= shape_max_count);
+    return shapes + shape_count;
+}
+
+Material** scene_payload::get_material_position()
+{
+    assert(material_count <= material_max_count);
+    return materials + material_count;
+}
+
+Light** scene_payload::get_light_position()
+{
+    assert(light_count <= light_max_count);
+    return lights + light_count;
+}
+
+geometry_primitive** scene_payload::get_primitive_position()
+{
+    assert(primitive_count <= primitive_max_count);
+    return primitives + primitive_count;
+}
+
 Matrix4f* scene_payload::add_matrix(const Matrix4f& matrix)
 {
-    assert(matrix_count < matrix_max_count);
-    const auto ptr = (Matrix4f*)data.get() + matrix_count;
+    const auto ptr = get_matrix_position();
 
     ptr[0] = matrix;
     ptr[1] = matrix.inverse();
@@ -92,41 +128,33 @@ Matrix4f* scene_payload::add_matrix(const Matrix4f& matrix)
 
 void scene_payload::add_shape(Shape* shape)
 {
-    assert(shape_count < shape_max_count);
-    const auto mat = (Matrix4f*)data.get() + matrix_max_count;
-    auto       ptr = (usize*)mat + shape_count;
+    const auto ptr = get_shape_position();
 
-    *((Shape**)ptr) = shape;
+    *ptr = shape;
     shape_count += 1;
 }
 
 void scene_payload::add_material(Material* material)
 {
-    assert(material_count < material_max_count);
-    const auto mat = (Matrix4f*)data.get() + matrix_max_count;
-    auto       ptr = (usize*)mat + shape_max_count + material_count;
+    const auto ptr = get_material_position();
 
-    *((Material**)ptr) = material;
+    *ptr = material;
     material_count += 1;
 }
 
 void scene_payload::add_light(Light* light)
 {
-    assert(light_count < light_max_count);
-    const auto mat = (Matrix4f*)data.get() + matrix_max_count;
-    auto       ptr = (usize*)mat + shape_max_count + material_max_count + light_count;
+    const auto ptr = get_light_position();
 
-    *((Light**)ptr) = light;
+    *ptr = light;
     light_count += 1;
 }
 
 void scene_payload::add_primitive(geometry_primitive* primitive)
 {
-    assert(primitive_count < primitive_max_count);
-    const auto mat = (Matrix4f*)data.get() + matrix_max_count;
-    auto       ptr = (usize*)mat + shape_max_count + material_max_count + light_max_count + primitive_count;
+    const auto ptr = get_primitive_position();
 
-    *((geometry_primitive**)ptr) = primitive;
+    *ptr = primitive;
     primitive_count += 1;
 }
 
@@ -141,8 +169,29 @@ Matrix4f* scene_payload::get_transform(const json& j)
     return add_matrix(matrix);
 }
 
+Material* scene_payload::get_material(const json& j)
+{
+    const auto name = j.get<std::string_view>();
+
+    std::optional<usize> index;
+    for (const auto& [i, value] : enumerate(materials_name))
+    {
+        if (name == value)
+            index = i;
+    }
+
+    if (!index.has_value())
+    {
+        println("invalid material name");
+        exit(-1);
+    }
+
+    return materials[index.value()];
+}
+
 void scene_payload::counter_pass(const json& j)
 {
+    matrix_max_count += 1;
     for (auto& j : j["Shapes"])
     {
         if (!j["transform"].is_null())
@@ -151,25 +200,37 @@ void scene_payload::counter_pass(const json& j)
 
     for (auto& j : j["Lights"])
     {
-        if (!j["Shape"]["transform"].is_null())
-            light_max_count += 1;
+        if (!j["shape"]["transform"].is_null())
+            matrix_max_count += 2;
     }
 
-    shape_max_count     = j["Shapes"].size() + j["Lights"].size();
+    light_max_count     = j["Lights"].size();
+    shape_max_count     = j["Shapes"].size() + light_max_count;
     material_max_count  = j["Materials"].size();
     primitive_max_count = shape_max_count;
+}
 
+void scene_payload::init_pass()
+{
     const auto size = matrix_max_count * sizeof(Matrix4f) + (shape_max_count + material_max_count + light_max_count + primitive_max_count) * sizeof(void*);
 
-    data                     = std::make_unique<u8[]>(size);
-    *((Matrix4f*)data.get()) = Matrix4f::identity();
+    data = std::make_unique<u8[]>(size);
+
+    matrixes    = (Matrix4f*)data.get();
+    matrixes[0] = Matrix4f::identity();
+    matrix_count += 1;
+
+    shapes     = (Shape**)(matrixes + matrix_max_count);
+    materials  = (Material**)(shapes + shape_max_count);
+    lights     = (Light**)(matrixes + material_max_count);
+    primitives = (geometry_primitive**)(matrixes + light_max_count);
 }
 
 void scene_payload::config_pass(const json& j)
 {
     config.spp      = j["spp"].get<u32>();
     config.thread   = j["thread"].get<u32>();
-    const auto name = j["thread"].get<std::string_view>();
+    const auto name = j["Integrator"].get<std::string_view>();
     if (name == "ao")
     {
         config.type = integrator_type::ao;
@@ -184,7 +245,8 @@ void scene_payload::config_pass(const json& j)
     }
     else
     {
-        throw std::runtime_error("invalid integrator type");
+        println("invalid integrator type");
+        exit(-1);
     }
 }
 
@@ -205,48 +267,73 @@ void scene_payload::camera_pass(const json& j)
 
 void scene_payload::shape_pass(const json& j)
 {
-
+    for (auto i : range(j.size()))
+    {
+        const auto& value     = j[i];
+        const auto  shape     = make_shape(value);
+        const auto  material  = get_material(value["material"]);
+        const auto  primitive = new geometry_primitive(shape, material);
+        add_shape(shape);
+        add_primitive(primitive);
+    }
 }
 
 void scene_payload::material_pass(const json& j)
 {
-
+    materials_name.reserve(j.size());
+    for (auto i : range(j.size()))
+    {
+        const auto& value    = j[i];
+        const auto  name     = value["name"].get<std::string_view>();
+        const auto  material = make_material(value);
+        add_material(material);
+        materials_name.emplace_back(name.data());
+    }
 }
 
 void scene_payload::light_pass(const json& j)
 {
+    for (auto i : range(j.size()))
+    {
+        const auto& value = j[i];
+        const auto  shape = make_shape(value["shape"]);
+        add_shape(shape);
 
+        const auto light     = make_light(value);
+        const auto primitive = new geometry_primitive(shape, nullptr, light);
+        add_light(light);
+        add_primitive(primitive);
+    }
 }
 
 bool scene_payload::load(const char* path)
 {
-    std::ifstream in("test.json");
+    std::ifstream in(path);
     if (in.fail())
     {
+        println("Failed to open scene file");
         return false;
     }
 
-    auto json = json::parse(in);
+    const auto json = json::parse(in);
     counter_pass(json);
+    init_pass();
     config_pass(json["Config"]);
     camera_pass(json["Camera"]);
-    shape_pass(json["Shapes"]);
-    material_pass(json["Materials"]);
+    // init material first
+    // material_pass(json["Materials"]);
+    // shape_pass(json["Shapes"]);
     light_pass(json["Lights"]);
 
+    materials_name.clear();
     return true;
 }
 
 Scene scene_payload::get_scene() const
 {
-    Scene      scene;
-    const auto mat = (Matrix4f*)data.get() + matrix_max_count;
-    auto       ptr = (usize*)mat + shape_max_count + material_max_count;
-
-    scene.lights = {(Light**)ptr, light_max_count};
-    ptr += light_max_count;
-    scene.primitives = {(geometry_primitive**)ptr, primitive_max_count};
-
+    Scene scene;
+    scene.lights     = {lights, light_max_count};
+    scene.primitives = {primitives, primitive_max_count};
     return scene;
 }
 
@@ -259,19 +346,76 @@ void scene_payload::clean()
     release((geometry_primitive**)light, primitive_max_count);
 }
 
-// void scene_payload::add_rectangle(const json& j)
-// {
-//     const auto transform = get_transform(j["transform"]);
-//     const auto length    = j["length"].get<f32>();
-//     const auto width     = j["width"].get<f32>();
+Shape* scene_payload::make_shape(const json& j)
+{
+    Shape*     shape;
+    const auto type = j["type"].get<std::string_view>();
 
-//     auto shape     = new Rectangle(transform[0], transform[1], length, width);
-//     auto material  = get_material(j["material"]);
-//     auto primitive = new geometry_primitive(shape, material);
+    if (type == "Rectangle")
+    {
+        shape = make_rectangle(j);
+    }
+    else
+    {
+        println("invalid shape type");
+        exit(-1);
+    }
+    return shape;
+}
 
-//     add_shape(shape);
-//     add_primitive(primitive);
-// }
+Material* scene_payload::make_material(const json& j)
+{
+    Material*  material;
+    const auto type = j["type"].get<std::string_view>();
+
+    if (type == "Matte")
+    {
+        material = make_matte(j);
+    }
+    else
+    {
+        println("invalid shape type");
+        exit(-1);
+    }
+    return material;
+}
+
+Light* scene_payload::make_light(const json& j)
+{
+    Light*     light;
+    const auto type = j["type"].get<std::string_view>();
+
+    if (type == "area_light")
+    {
+        light = make_area_light(j);
+    }
+    else
+    {
+        println("invalid light type");
+        exit(-1);
+    }
+    return light;
+}
+
+Shape* scene_payload::make_rectangle(const json& j)
+{
+    const auto transform = get_transform(j["transform"]);
+    const auto length    = j["length"].get<f32>();
+    const auto width     = j["width"].get<f32>();
+    return new Rectangle(transform[0], transform[1], length, width);
+}
+
+Light* scene_payload::make_area_light(const json& j)
+{
+    const auto emit  = Spectrum{j["emit"].get<f32>()};
+    const auto shape = *(get_shape_position() - 1);
+    return new area_light(shape, emit);
+}
+
+Material* scene_payload::make_matte(const json& j)
+{
+    return {};
+}
 
 // auto get_constant_texture(const json& j)
 // {

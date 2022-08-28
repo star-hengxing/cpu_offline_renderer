@@ -49,7 +49,9 @@
     ],
     "Lights": [
         {
-            "Shape": {
+            "type": "area_light",
+            "emit": 50,
+            "shape": {
                 "type": "Rectangle",
                 "transform": {
                     "translate": [
@@ -65,10 +67,6 @@
                 },
                 "length": 1,
                 "width": 1
-            },
-            "Light": {
-                "type": "area_light",
-                "emit": 50
             }
         }
     ]
