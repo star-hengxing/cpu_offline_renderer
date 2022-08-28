@@ -12,7 +12,7 @@ xmake 初始化项目会自动下载项目的依赖，按照操作提示即可�
 ```bash
 xmake g --proxy="socks5://127.0.0.1:<port>"
 ```
-按照命令行，依赖的Hinae放在cg目录，如果想放在项目目录内，需要修改`xmake.lua`
+最小化 clone，编译，然后渲染 asset 目录下经典的 cornell box 场景
 ```bash
 git clone --depth 1 https://github.com/star-hengxing/cpu_offline_renderer
 xmake build main
