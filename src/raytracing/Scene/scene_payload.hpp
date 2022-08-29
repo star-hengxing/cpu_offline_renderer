@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <tuple>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -47,10 +48,9 @@ public:
     perspective_camera camera;
 
 private:
+    std::tuple<const Matrix4f&, const Matrix4f&> get_transform(const Matrix4f* matrix);
     Matrix4f* get_transform(const json& j);
-    Shape*    get_shape(const json& j);
     Material* get_material(const json& j);
-    Light*    get_light(const json& j);
 
     void counter_pass(const json& j);
     void init_pass();

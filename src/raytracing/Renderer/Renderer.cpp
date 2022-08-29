@@ -53,6 +53,8 @@ void render(const char* path)
     println("rendering...");
 
     render_single_image(payload.config, scene, payload.camera);
+
+    payload.clean();
 }
 
 void render_single_image(const Config& config, const Scene& scene, Camera& camera)

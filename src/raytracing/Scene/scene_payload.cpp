@@ -111,6 +111,19 @@ std::unique_ptr<Texture> make_texture(const json& j)
 
 NAMESPACE_END()
 
+std::tuple<const Matrix4f&, const Matrix4f&>
+scene_payload::get_transform(const Matrix4f* matrix)
+{
+    if (matrix == matrixes.ptr)
+    {
+        return {matrixes[0], matrixes[0]};
+    }
+    else
+    {
+        return {matrix[0], matrix[1]};
+    }
+}
+
 Matrix4f* scene_payload::get_transform(const json& j)
 {
     if (j.is_null())
@@ -361,14 +374,8 @@ Shape* scene_payload::make_rectangle(const json& j)
     const auto transform = get_transform(j["transform"]);
     const auto length    = j["length"].get<f32>();
     const auto width     = j["width"].get<f32>();
-    if (transform == matrixes.ptr)
-    {
-        return new Rectangle(transform[0], transform[0], length, width);
-    }
-    else
-    {
-        return new Rectangle(transform[0], transform[1], length, width);
-    }
+    const auto [m, inv]  = get_transform(transform);
+    return new Rectangle(m, inv, length, width);
 }
 
 Shape* scene_payload::make_cuboid(const json& j)
@@ -377,14 +384,8 @@ Shape* scene_payload::make_cuboid(const json& j)
     const auto length    = j["length"].get<f32>();
     const auto width     = j["width"].get<f32>();
     const auto height    = j["height"].get<f32>();
-    if (transform == matrixes.ptr)
-    {
-        return new Cuboid(transform[0], transform[0], length, width, height);
-    }
-    else
-    {
-        return new Cuboid(transform[0], transform[1], length, width, height);
-    }
+    const auto [m, inv]  = get_transform(transform);
+    return new Cuboid(m, inv, length, width, height);
 }
 
 Light* scene_payload::make_area_light(const json& j)
