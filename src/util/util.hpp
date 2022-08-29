@@ -47,5 +47,5 @@ constexpr auto arithmetic_mean(usize size, T fn)
     {
         sum += fn();
     }
-    return sum / static_cast<T>(size);
+    return sum / size;
 }

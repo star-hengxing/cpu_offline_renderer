@@ -48,8 +48,6 @@ public:
     perspective_camera camera;
 
 private:
-    std::tuple<const Matrix4f&, const Matrix4f&> get_transform(const Matrix4f* matrix);
-    Matrix4f* get_transform(const json& j);
     Material* get_material(const json& j);
 
     void counter_pass(const json& j);
@@ -60,6 +58,8 @@ private:
     void material_pass(const json& j);
     void light_pass(const json& j);
 
+    std::tuple<const Matrix4f&, const Matrix4f&>
+              make_transform(const json& j);
     Shape*    make_shape(const json& j);
     Material* make_material(const json& j);
     Light*    make_light(const json& j);
@@ -78,3 +78,14 @@ public:
 
     void clean();
 };
+
+template <template <arithmetic> typename T, arithmetic U>
+constexpr T<U> get_float3(const json& j, const char* filed)
+{
+    T<U> ret;
+    for (auto i : range(3))
+    {
+        ret[i] = j[filed][i].get<U>();
+    }
+    return ret;
+}

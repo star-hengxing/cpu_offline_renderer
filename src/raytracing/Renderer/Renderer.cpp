@@ -3,7 +3,10 @@
 #include <raytracing/Scene/scene_payload.hpp>
 #include <raytracing/Scene/Scene.hpp>
 
+#include <raytracing/Core/Integrator/ambient_occlusion_integrator.hpp>
+#include <raytracing/Core/Integrator/direct_light_integrator.hpp>
 #include <raytracing/Core/Integrator/path_tracing_integrator.hpp>
+
 #include <raytracing/Core/Sampler/Sampler.hpp>
 #include <raytracing/Renderer/Renderer.hpp>
 
@@ -25,12 +28,12 @@ std::unique_ptr<Integrator> make_integrator(const Config& config)
 
         case ao:
         {
-            return std::make_unique<path_tracing_integrator>();
+            return std::make_unique<ambient_occlusion_integrator>(config.spp);
         }
 
         case direct:
         {
-            return std::make_unique<path_tracing_integrator>();
+            return std::make_unique<direct_light_integrator>();
         }
 
         case pt:
