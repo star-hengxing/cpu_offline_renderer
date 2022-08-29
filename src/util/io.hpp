@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <tuple>
 
 #include "basic_type.hpp"
