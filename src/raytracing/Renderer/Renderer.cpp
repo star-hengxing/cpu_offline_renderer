@@ -23,8 +23,20 @@ std::unique_ptr<Integrator> make_integrator(const Config& config)
     {
         using enum integrator_type;
 
-        case pt:
+        case ao:
+        {
             return std::make_unique<path_tracing_integrator>();
+        }
+
+        case direct:
+        {
+            return std::make_unique<path_tracing_integrator>();
+        }
+
+        case pt:
+        {
+            return std::make_unique<path_tracing_integrator>();
+        }
     }
 }
 

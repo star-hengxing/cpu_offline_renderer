@@ -11,35 +11,35 @@ TEST_CASE("test the scene file loader")
     SUBCASE("Matrix")
     {
         constexpr auto count = 15;
-        CHECK(payload.matrix_count == count);
-        CHECK(payload.matrix_max_count == count);
+        CHECK(payload.matrixes.size == count);
+        CHECK(payload.matrixes.max_size == count);
     }
 
     SUBCASE("Shape")
     {
         constexpr auto count = 8;
-        CHECK(payload.shape_count == count);
-        CHECK(payload.shape_max_count == count);
+        CHECK(payload.shapes.size == count);
+        CHECK(payload.shapes.max_size == count);
     }
 
     SUBCASE("Material")
     {
         constexpr auto count = 3;
-        CHECK(payload.material_count == count);
-        CHECK(payload.material_max_count == count);
+        CHECK(payload.materials.size == count);
+        CHECK(payload.materials.max_size == count);
     }
 
     SUBCASE("Light")
     {
         constexpr auto count = 1;
-        CHECK(payload.light_count == count);
-        CHECK(payload.light_max_count == count);
+        CHECK(payload.lights.size == count);
+        CHECK(payload.lights.max_size == count);
     }
 
     SUBCASE("Primitive")
     {
         constexpr auto count = 8;
-        CHECK(payload.primitive_count == count);
-        CHECK(payload.primitive_max_count == count);
+        CHECK(payload.primitives.size == count);
+        CHECK(payload.primitives.max_size == count);
     }
 }

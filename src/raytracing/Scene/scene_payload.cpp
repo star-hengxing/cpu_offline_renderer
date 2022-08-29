@@ -82,16 +82,6 @@ Matrix4f get_matrix(const json& j)
     return t * r * s;
 }
 
-template <typename T>
-auto release(T** ptr, usize count)
-{
-    for (auto i : range(count))
-    {
-        delete ptr[i];
-    }
-    return ptr + count;
-};
-
 std::unique_ptr<Texture> make_constant_texture(const json& j)
 {
     const auto r      = j["albedo"][0].get<u8>();
@@ -121,87 +111,18 @@ std::unique_ptr<Texture> make_texture(const json& j)
 
 NAMESPACE_END()
 
-Matrix4f* scene_payload::get_matrix_position()
-{
-    assert(matrix_count <= matrix_max_count);
-    return matrixes + matrix_count;
-}
-
-Shape** scene_payload::get_shape_position()
-{
-    assert(shape_count <= shape_max_count);
-    return shapes + shape_count;
-}
-
-Material** scene_payload::get_material_position()
-{
-    assert(material_count <= material_max_count);
-    return materials + material_count;
-}
-
-Light** scene_payload::get_light_position()
-{
-    assert(light_count <= light_max_count);
-    return lights + light_count;
-}
-
-geometry_primitive** scene_payload::get_primitive_position()
-{
-    assert(primitive_count <= primitive_max_count);
-    return primitives + primitive_count;
-}
-
-Matrix4f* scene_payload::add_matrix(const Matrix4f& matrix)
-{
-    const auto ptr = get_matrix_position();
-
-    ptr[0] = matrix;
-    ptr[1] = matrix.inverse();
-    matrix_count += 2;
-    return ptr;
-}
-
-void scene_payload::add_shape(Shape* shape)
-{
-    const auto ptr = get_shape_position();
-
-    *ptr = shape;
-    shape_count += 1;
-}
-
-void scene_payload::add_material(Material* material)
-{
-    const auto ptr = get_material_position();
-
-    *ptr = material;
-    material_count += 1;
-}
-
-void scene_payload::add_light(Light* light)
-{
-    const auto ptr = get_light_position();
-
-    *ptr = light;
-    light_count += 1;
-}
-
-void scene_payload::add_primitive(geometry_primitive* primitive)
-{
-    const auto ptr = get_primitive_position();
-
-    *ptr = primitive;
-    primitive_count += 1;
-}
-
 Matrix4f* scene_payload::get_transform(const json& j)
 {
     if (j.is_null())
     {
-        return (Matrix4f*)data.get();
+        return matrixes.ptr;
     }
 
-    const auto matrix = get_matrix(j);
-    return add_matrix(matrix);
+    const auto matrix  = get_matrix(j);
+    const auto current = matrixes.next_ptr();
+    matrixes.add(matrix)
+        .add(matrix.inverse());
+    return current;
 }
 
 Material* scene_payload::get_material(const json& j)
@@ -226,39 +147,39 @@ Material* scene_payload::get_material(const json& j)
 
 void scene_payload::counter_pass(const json& j)
 {
-    matrix_max_count += 1;
+    u32 max_matrix_size = 1;
     for (auto& j : j["Shapes"])
     {
         if (!j["transform"].is_null())
-            matrix_max_count += 2;
+            max_matrix_size += 2;
     }
 
     for (auto& j : j["Lights"])
     {
         if (!j["shape"]["transform"].is_null())
-            matrix_max_count += 2;
+            max_matrix_size += 2;
     }
 
-    light_max_count     = j["Lights"].size();
-    shape_max_count     = j["Shapes"].size() + light_max_count;
-    material_max_count  = j["Materials"].size();
-    primitive_max_count = shape_max_count;
+    matrixes.max_size   = max_matrix_size;
+    lights.max_size     = j["Lights"].size();
+    shapes.max_size     = j["Shapes"].size() + lights.max_size;
+    materials.max_size  = j["Materials"].size();
+    primitives.max_size = shapes.max_size;
 }
 
 void scene_payload::init_pass()
 {
-    const auto size = matrix_max_count * sizeof(Matrix4f) + (shape_max_count + material_max_count + light_max_count + primitive_max_count) * sizeof(void*);
+    const auto size = matrixes.max_size * sizeof(Matrix4f) + (shapes.max_size + materials.max_size + lights.max_size + primitives.max_size) * sizeof(void*);
 
     data = std::make_unique<u8[]>(size);
 
-    matrixes    = (Matrix4f*)data.get();
-    matrixes[0] = Matrix4f::identity();
-    matrix_count += 1;
+    matrixes.ptr = (Matrix4f*)data.get();
+    matrixes.add(Matrix4f::identity());
 
-    shapes     = (Shape**)(matrixes + matrix_max_count);
-    materials  = (Material**)(shapes + shape_max_count);
-    lights     = (Light**)(materials + material_max_count);
-    primitives = (geometry_primitive**)(lights + light_max_count);
+    shapes.ptr     = (Shape**)(matrixes.ptr + matrixes.max_size);
+    materials.ptr  = (Material**)(shapes.ptr + shapes.max_size);
+    lights.ptr     = (Light**)(materials.ptr + materials.max_size);
+    primitives.ptr = (geometry_primitive**)(lights.ptr + lights.max_size);
 }
 
 void scene_payload::config_pass(const json& j)
@@ -308,8 +229,8 @@ void scene_payload::shape_pass(const json& j)
         const auto  shape     = make_shape(value);
         const auto  material  = get_material(value["material"]);
         const auto  primitive = new geometry_primitive(shape, material);
-        add_shape(shape);
-        add_primitive(primitive);
+        shapes.add(shape);
+        primitives.add(primitive);
     }
 }
 
@@ -321,7 +242,7 @@ void scene_payload::material_pass(const json& j)
         const auto& value    = j[i];
         const auto  name     = value["name"].get<std::string_view>();
         const auto  material = make_material(value);
-        add_material(material);
+        materials.add(material);
         materials_name.emplace_back(name.data());
     }
 }
@@ -332,12 +253,12 @@ void scene_payload::light_pass(const json& j)
     {
         const auto& value = j[i];
         const auto  shape = make_shape(value["shape"]);
-        add_shape(shape);
+        shapes.add(shape);
 
         const auto light     = make_light(value);
         const auto primitive = new geometry_primitive(shape, nullptr, light);
-        add_light(light);
-        add_primitive(primitive);
+        lights.add(light);
+        primitives.add(primitive);
     }
 }
 
@@ -367,18 +288,17 @@ bool scene_payload::load(const char* path)
 Scene scene_payload::get_scene() const
 {
     Scene scene;
-    scene.lights     = {lights, light_max_count};
-    scene.primitives = {primitives, primitive_max_count};
+    scene.lights     = lights.view();
+    scene.primitives = primitives.view();
     return scene;
 }
 
 void scene_payload::clean()
 {
-    auto matrix   = (Matrix4f*)data.get() + matrix_max_count;
-    auto shape    = release((Shape**)matrix, shape_max_count);
-    auto material = release((Material**)shape, material_max_count);
-    auto light    = release((Light**)material, light_max_count);
-    release((geometry_primitive**)light, primitive_max_count);
+    shapes.clean();
+    materials.clean();
+    lights.clean();
+    primitives.clean();
 }
 
 Shape* scene_payload::make_shape(const json& j)
@@ -441,7 +361,7 @@ Shape* scene_payload::make_rectangle(const json& j)
     const auto transform = get_transform(j["transform"]);
     const auto length    = j["length"].get<f32>();
     const auto width     = j["width"].get<f32>();
-    if (transform == matrixes)
+    if (transform == matrixes.ptr)
     {
         return new Rectangle(transform[0], transform[0], length, width);
     }
@@ -457,7 +377,7 @@ Shape* scene_payload::make_cuboid(const json& j)
     const auto length    = j["length"].get<f32>();
     const auto width     = j["width"].get<f32>();
     const auto height    = j["height"].get<f32>();
-    if (transform == matrixes)
+    if (transform == matrixes.ptr)
     {
         return new Cuboid(transform[0], transform[0], length, width, height);
     }
@@ -470,7 +390,7 @@ Shape* scene_payload::make_cuboid(const json& j)
 Light* scene_payload::make_area_light(const json& j)
 {
     const auto emit  = Spectrum{j["emit"].get<f32>()};
-    const auto shape = *(get_shape_position() - 1);
+    const auto shape = shapes.back();
     return new area_light(shape, emit);
 }
 
