@@ -1,4 +1,3 @@
-#include <optional>
 #include <fstream>
 #include <cassert>
 #include <memory>
@@ -15,22 +14,29 @@
 
 void scene_payload::counter_pass(const json& j)
 {
-    u32 max_matrix_size = 1;
+    u32 max_matrix_size = 0;
     for (auto& j : j["Shapes"])
     {
         if (!j["transform"].is_null())
             max_matrix_size += 2;
     }
 
+    u32 has_shape_count = 0;
     for (auto& j : j["Lights"])
     {
-        if (!j["shape"]["transform"].is_null())
-            max_matrix_size += 2;
+        if (j.contains(std::string_view{"shape"}))
+        {
+            has_shape_count += 1;
+            if (!j["shape"]["transform"].is_null())
+            {
+                max_matrix_size += 2;
+            }
+        }
     }
 
-    matrixes.max_size   = max_matrix_size;
+    matrixes.max_size   = max_matrix_size + 1;
     lights.max_size     = j["Lights"].size();
-    shapes.max_size     = j["Shapes"].size() + lights.max_size;
+    shapes.max_size     = j["Shapes"].size() + has_shape_count;
     materials.max_size  = j["Materials"].size();
     primitives.max_size = shapes.max_size;
 }
@@ -120,13 +126,22 @@ void scene_payload::light_pass(const json& j)
     for (auto i : range(j.size()))
     {
         const auto& value = j[i];
-        const auto  shape = make_shape(value["shape"]);
-        shapes.add(shape);
 
-        const auto light     = make_light(value);
-        const auto primitive = new geometry_primitive(shape, nullptr, light);
-        lights.add(light);
-        primitives.add(primitive);
+        if (value.contains(std::string_view{"shape"}))
+        {
+            const auto shape = make_shape(value["shape"]);
+            shapes.add(shape);
+
+            const auto light     = make_light(value);
+            const auto primitive = new geometry_primitive(shape, nullptr, light);
+            lights.add(light);
+            primitives.add(primitive);
+        }
+        else
+        {
+            const auto light = make_light(value);
+            lights.add(light);
+        }
     }
 }
 

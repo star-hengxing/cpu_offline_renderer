@@ -1,3 +1,4 @@
+#include <optional>
 #include <cassert>
 // forward declare
 #include "scene_payload.hpp"
@@ -9,16 +10,22 @@
 
 #include <raytracing/Core/Texture/constant_texture.hpp>
 
+#include <raytracing/Core/Light/point_light.hpp>
+#include <raytracing/Core/Light/spot_light.hpp>
 #include <raytracing/Core/Light/area_light.hpp>
 
 #include <math/Transform.hpp>
 
-#include <util/marco.hpp>
 #include <util/io.hpp>
 
-NAMESPACE_BEGIN()
+static Light* make_point_light(const json& j);
+static Light* make_spot_light(const json& j);
 
-Matrix4f get_transform(const json& j)
+static std::unique_ptr<Texture> make_texture(const json& j);
+
+static std::unique_ptr<Texture> make_constant_texture(const json& j);
+
+static Matrix4f get_transform(const json& j)
 {
     auto t = Matrix4f::identity();
     auto r = Matrix4f::identity();
@@ -63,35 +70,6 @@ Matrix4f get_transform(const json& j)
 
     return t * r * s;
 }
-
-std::unique_ptr<Texture> make_constant_texture(const json& j)
-{
-    const auto r      = j["albedo"][0].get<u8>();
-    const auto g      = j["albedo"][1].get<u8>();
-    const auto b      = j["albedo"][2].get<u8>();
-    const auto albedo = rgb_to_float<f32>(Color(r, g, b));
-    return std::make_unique<constant_texture>(albedo);
-}
-
-std::unique_ptr<Texture> make_texture(const json& j)
-{
-    std::unique_ptr<Texture> texture;
-
-    const auto type = j["type"].get<std::string_view>();
-
-    if (type == "constant_texture")
-    {
-        texture = make_constant_texture(j);
-    }
-    else
-    {
-        println("invalid texture type");
-        exit(-1);
-    }
-    return texture;
-}
-
-NAMESPACE_END()
 
 std::tuple<const Matrix4f&, const Matrix4f&>
 scene_payload::make_transform(const json& j)
@@ -172,7 +150,15 @@ Light* scene_payload::make_light(const json& j)
     Light*     light;
     const auto type = j["type"].get<std::string_view>();
 
-    if (type == "area_light")
+    if (type == "point_light")
+    {
+        light = make_point_light(j);
+    }
+    else if (type == "spot_light")
+    {
+        light = make_spot_light(j);
+    }
+    else if (type == "area_light")
     {
         light = make_area_light(j);
     }
@@ -201,6 +187,29 @@ Shape* scene_payload::make_cuboid(const json& j)
     return new Cuboid(m, inv, length, width, height);
 }
 
+Material* scene_payload::make_matte(const json& j)
+{
+    auto albedo = make_texture(j["albedo"]);
+    return new Matte(std::move(albedo));
+}
+
+Light* make_point_light(const json& j)
+{
+    const auto position  = get_float3<Point3, f32>(j, "position");
+    const auto intensity = get_float3<Vector3, f32>(j, "intensity");
+    return new point_light(position, intensity);
+}
+
+Light* make_spot_light(const json& j)
+{
+    const auto position    = get_float3<Point3, f32>(j, "position");
+    const auto intensity   = get_float3<Vector3, f32>(j, "intensity");
+    const auto cos_width   = j["cos_width"].get<f32>();
+    const auto cos_falloff = j["cos_falloff"].get<f32>();
+    const auto dir         = get_float3<Vector3, f32>(j, "dir");
+    return new spot_light(position, intensity, cos_width, cos_falloff, dir);
+}
+
 Light* scene_payload::make_area_light(const json& j)
 {
     const auto emit  = Spectrum{j["emit"].get<f32>()};
@@ -208,8 +217,29 @@ Light* scene_payload::make_area_light(const json& j)
     return new area_light(shape, emit);
 }
 
-Material* scene_payload::make_matte(const json& j)
+std::unique_ptr<Texture> make_texture(const json& j)
 {
-    auto albedo = make_texture(j["albedo"]);
-    return new Matte(std::move(albedo));
+    std::unique_ptr<Texture> texture;
+
+    const auto type = j["type"].get<std::string_view>();
+
+    if (type == "constant_texture")
+    {
+        texture = make_constant_texture(j);
+    }
+    else
+    {
+        println("invalid texture type");
+        exit(-1);
+    }
+    return texture;
+}
+
+std::unique_ptr<Texture> make_constant_texture(const json& j)
+{
+    const auto r      = j["albedo"][0].get<u8>();
+    const auto g      = j["albedo"][1].get<u8>();
+    const auto b      = j["albedo"][2].get<u8>();
+    const auto albedo = rgb_to_float<f32>(Color(r, g, b));
+    return std::make_unique<constant_texture>(albedo);
 }
