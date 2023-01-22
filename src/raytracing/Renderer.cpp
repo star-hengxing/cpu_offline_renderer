@@ -17,8 +17,8 @@ Renderer::Renderer(Scene&& scene, perspective_camera&& camera, std::unique_ptr<I
 
 using namespace std::literals;
 
-static usize spp = 4;
-static usize thread_count = 0;
+static auto spp = usize{4};
+static auto thread_count = usize{std::jthread::hardware_concurrency()};
 
 Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[], return_type (*fn)())
 {
@@ -26,7 +26,10 @@ Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[], 
     {
         spp = std::atoi(argv[1]);
         if(argc == 3)
-            thread_count = std::atoi(argv[2]);
+        {
+            const auto tmp = std::atoi(argv[2]);
+            thread_count = min<usize>(thread_count, tmp);
+        }
     }
 
     auto [scene, camera, integrator] = (fn == nullptr ? native() : fn());
@@ -40,7 +43,9 @@ Result<Renderer, std::string_view> Renderer::init(int argc, char const *argv[], 
 
 void Renderer::render()
 {
-    const auto [width, height] = camera.photo.get_width_height();
+    const auto [w, h] = camera.photo.get_width_height();
+    const auto width = w;
+    const auto height = h;
     println("rendering...");
 
     const auto for_width = [&](usize y, Sampler &sampler)
@@ -72,8 +77,7 @@ void Renderer::render()
     else
     {
         std::mutex m;
-        const auto count = min(thread_count, static_cast<usize>(std::jthread::hardware_concurrency()));
-        render_queue{count, height, [&](usize y)
+        render_queue{thread_count, height, [&](usize y)
         {
             static thread_local Sampler sampler;
             for_width(y, sampler);
