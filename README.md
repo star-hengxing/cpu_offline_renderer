@@ -6,13 +6,11 @@
 
 确保你的系统有[xmake](https://xmake.io/)和支持 C++20 的编译器（MSVC, GCC）
 
-Clang 对 C++20 支持太慢，暂时不支持
-
 xmake 初始化项目会自动下载项目的依赖，按照操作提示即可，如果下载失败，请看[这里](https://xmake.io/#/zh-cn/package/remote_package?id=%e8%bf%9c%e7%a8%8b%e5%8c%85%e4%b8%8b%e8%bd%bd%e4%bc%98%e5%8c%96)，我推荐手动设置代理(记得修改代理端口)
 ```bash
 xmake g --proxy="socks5://127.0.0.1:<port>"
 ```
-按照命令行，依赖的Hinae放在cg目录，如果想放在项目目录内，需要修改`xmake.lua`
+
 ```bash
 git clone --depth 1 https://github.com/star-hengxing/cpu_offline_renderer
 xmake
@@ -21,7 +19,7 @@ xmake run
 
 等待渲染结束，你可以在 images 目录里查看渲染图片
 
-可以通过命令行参数传递 spp 和线程数，默认单线程，spp=4
+可以通过命令行参数传递 spp 和线程数，默认最大线程，spp=4
 
 ```bash
 xmake run main <spp> <thread count>
