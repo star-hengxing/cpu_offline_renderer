@@ -33,7 +33,7 @@ end
 -- support utf-8 on msvc
 if is_host("windows") then
     add_defines("UNICODE", "_UNICODE")
-    add_cxflags("/execution-charset:utf-8", "/source-charset:utf-8", {tools = "cl"})
+    add_cxflags("/utf-8", {tools = "cl"})
 end
 -- disable sqrt function negative check
 add_cxxflags("-fno-math-errno", {tools = {"gcc", "clang"}})
